@@ -14,3 +14,7 @@ ffmpeg入门系列教程代码
 ### ffmpeg_decode_flow
 
 视频解码的基本流程并输出视频信息
+
+### ffmpeg_decode_save
+
+解码视频并保存其中的50帧画面为ppm格式图片
