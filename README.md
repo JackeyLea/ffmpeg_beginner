@@ -1,4 +1,5 @@
 # ffmpeg_beginner
+
 ffmpeg入门系列教程代码
 
 ## 源码
@@ -18,3 +19,7 @@ ffmpeg入门系列教程代码
 ### ffmpeg_decode_save
 
 解码视频并保存其中的50帧画面为ppm格式图片
+
+### ffmpeg_video_encode_yuv2h264
+
+将yuv源视频文件编码为h264格式的文件
