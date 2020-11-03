@@ -6,161 +6,159 @@
 #include "libswscale/swscale.h"
 #include "libavformat/avformat.h"
 #include "libavutil/avutil.h"
-
-//刷新编码器
-int flush_encoder(AVFormatContext *fmtCtx, AVCodecContext *codecCtx,int vStreamIndex) {
-    int      ret;
-    AVPacket enc_pkt;
-    enc_pkt.data = NULL;
-    enc_pkt.size = 0;
-    av_init_packet(&enc_pkt);
-
-    if (!(codecCtx->codec->capabilities & AV_CODEC_CAP_DELAY))
-        return 0;
-
-    printf("Flushing stream #%u encoder\n",vStreamIndex);
-    if(avcodec_send_frame(codecCtx,0)>=0){
-        while(avcodec_receive_packet(codecCtx,&enc_pkt)>=0){
-            printf("success encoder 1 frame.\n");
-
-            // parpare packet for muxing
-            enc_pkt.stream_index = vStreamIndex;
-            av_packet_rescale_ts(&enc_pkt,codecCtx->time_base,
-                                 fmtCtx->streams[ vStreamIndex ]->time_base);
-            ret = av_interleaved_write_frame(fmtCtx, &enc_pkt);
-            if(ret<0){
-                break;
-            }
-        }
-    }
-
-    return ret;
-}
+#include "libavutil/mathematics.h"
 
 // 在将H264转封装为MP4
-int main(int argc, char *argv[]) {
-    AVOutputFormat *outFmt=NULL;
-    //Input AVFormatContext and Output AVFormatContext
-    AVFormatContext *inVFmtCtx=NULL,*inAFmtCtx=NULL,*outFmtCtx=NULL;
-    AVPacket pkt;
-    int ret=-1, i;
-    int inVIndex=0,outVIndex=0;
-    int frameIndex = 0;
-    int64_t cur_pts_v = 0, cur_pts_a = 0;
+int main(){
+    AVFormatContext *inVFmtCtx=NULL,*outFmtCtx=NULL;
+
+    int frame_index=0;//统计帧数
+    int inVStreamIndex=-1,outVStreamIndex=-1;//输入输出视频流在文件中的索引位置
     const char *inVFileName = "result.h264";
-    const char *outFileName = "222.mp4";//Output file URL
-    //Input
-    if ((ret = avformat_open_input(&inVFmtCtx, inVFileName, 0, 0)) < 0) {
-        printf("Could not open input file.");
+    const char *outFileName = "result.mp4";
+
+    //======================输入部分============================//
+
+    //打开输入文件
+    if(avformat_open_input(&inVFmtCtx,inVFileName,NULL,NULL)<0){
+        printf("Cannot open input file.\n");
         return -1;
     }
 
-    if ((ret = avformat_find_stream_info(inVFmtCtx, 0)) < 0) {
-        printf("Failed to retrieve input stream information");
+    //查找输入文件中的流
+    if(avformat_find_stream_info(inVFmtCtx,NULL)<0){
+        printf("Cannot find stream info in input file.\n");
         return -1;
     }
 
-    printf("===============Input information=========\n");
-    av_dump_format(inVFmtCtx, 0, inVFileName, 0);
-
-    //Output
-    avformat_alloc_output_context2(&outFmtCtx, NULL, NULL, outFileName);
-    if (!outFmtCtx) {
-        printf("Could not create output context\n");
-        return -1;
-    }
-    outFmt = outFmtCtx->oformat;
-
-
-    AVCodecParameters *codecPara = inVFmtCtx->streams[inVIndex]->codecpar;
-    AVStream *in_stream = inVFmtCtx->streams[inVIndex];
-    AVStream *out_stream = avformat_new_stream(outFmtCtx, in_stream->codec->codec);
-    //Copy the settings of AVCodecContext
-    if (avcodec_copy_context(out_stream->codec, in_stream->codec) < 0) {
-        printf("Failed to copy context from input to output stream codec context\n");
-        goto end;
-    }
-    out_stream->codec->codec_tag = 0;
-    if (ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
-        out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-    //break;
-
-    printf("==========Output Information==========\n");
-    av_dump_format(ofmt_ctx, 0, out_filename, 1);
-    printf("======================================\n");
-
-    //Write file header
-    if (avformat_write_header(ofmt_ctx, NULL) < 0) {
-        printf("Error occurred when opening output file\n");
-        goto end;
-    }
-
-    while (1) {
-        AVFormatContext *ifmt_ctx;
-        int stream_index = 0;
-        AVStream *in_stream, *out_stream;
-        //Get an AVPacket
-        //if(av_compare_ts(cur_pts_v,ifmt_ctx_v->streams[videoindex_v]->time_base,cur_pts_a,ifmt_ctx_a->streams[audioindex_a]->time_base) <= 0)
-        {
-            ifmt_ctx = ifmt_ctx_v;
-            stream_index = videoindex_out;
-            if (av_read_frame(ifmt_ctx, &pkt) >= 0) {
-                do {
-                    in_stream = ifmt_ctx->streams[pkt.stream_index];
-                    out_stream = ofmt_ctx->streams[stream_index];
-                    printf("stream_index==%d,pkt.stream_index==%d,videoindex_v=%d\n", stream_index, pkt.stream_index, videoindex_v);
-                    if (pkt.stream_index == videoindex_v) {
-                        //FIX：No PTS (Example: Raw H.264)
-                        //Simple Write PTS
-                        if (pkt.pts == AV_NOPTS_VALUE) {
-                            printf("frame_index==%d\n", frame_index);
-                            //Write PTS
-                            AVRational time_base1 = in_stream->time_base;
-                            //Duration between 2 frames (us)
-                            int64_t calc_duration = (double)AV_TIME_BASE / av_q2d(in_stream->r_frame_rate);
-                            //Parameters
-                            pkt.pts = (double)(frame_index*calc_duration) / (double)(av_q2d(time_base1)*AV_TIME_BASE);
-                            pkt.dts = pkt.pts;
-                            pkt.duration = (double)calc_duration / (double)(av_q2d(time_base1)*AV_TIME_BASE);
-                            frame_index++;
-                        }
-                        cur_pts_v = pkt.pts;
-                        break;
-                    }
-                } while (av_read_frame(ifmt_ctx, &pkt) >= 0);
-            }
-            else {
-                break;
-            }
-        }
-
-        //Convert PTS/DTS
-        pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-        pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-        pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
-        pkt.pos = -1;
-        pkt.stream_index = stream_index;
-        printf("Write 1 Packet. size:%5d\tpts:%lld\n", pkt.size, pkt.pts);
-        //Write
-        if (av_interleaved_write_frame(ofmt_ctx, &pkt) < 0) {
-            printf("Error muxing packet\n");
+    //查找视频流在文件中的位置
+    for(size_t i=0;i<inVFmtCtx->nb_streams;i++){
+        if(inVFmtCtx->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO){
+            inVStreamIndex=(int)i;
             break;
         }
-        av_free_packet(&pkt);
     }
-    //Write file trailer
-    av_write_trailer(ofmt_ctx);
 
-    avformat_close_input(&ifmt_ctx_v);
-    //avformat_close_input(&ifmt_ctx_a);
-    /* close output */
-    if (ofmt_ctx && !(ofmt->flags & AVFMT_NOFILE))
-        avio_close(ofmt_ctx->pb);
-    avformat_free_context(ofmt_ctx);
-    if (ret < 0 && ret != AVERROR_EOF) {
-        printf("Error occurred.\n");
+    AVCodecParameters *codecPara = inVFmtCtx->streams[inVStreamIndex]->codecpar;//输入视频流的编码参数
+
+    printf("===============Input information========>\n");
+    av_dump_format(inVFmtCtx, 0, inVFileName, 0);
+    printf("===============Input information========<\n");
+
+
+    //=====================输出部分=========================//
+    //打开输出文件并填充格式数据
+    if(avformat_alloc_output_context2(&outFmtCtx,NULL,NULL,outFileName)<0){
+        printf("Cannot alloc output file context.\n");
         return -1;
     }
+
+    //打开输出文件并填充数据
+    if(avio_open(&outFmtCtx->pb,outFileName,AVIO_FLAG_READ_WRITE)<0){
+        printf("output file open failed.\n");
+        return -1;
+    }
+
+    //在输出的mp4文件中创建一条视频流
+    AVStream *outVStream = avformat_new_stream(outFmtCtx,NULL);
+    if(!outVStream){
+        printf("Failed allocating output stream.\n");
+        return -1;
+    }
+    outVStream->time_base.den=25;
+    outVStream->time_base.num=1;
+    outVStreamIndex=outVStream->index;
+
+    //查找编码器
+    AVCodec *outCodec = avcodec_find_encoder(codecPara->codec_id);
+    if(outCodec==NULL){
+        printf("Cannot find any encoder.\n");
+        return -1;
+    }
+
+    //从输入的h264编码器数据复制一份到输出文件的编码器中
+    AVCodecContext *outCodecCtx=avcodec_alloc_context3(outCodec);
+    AVCodecParameters *outCodecPara = outFmtCtx->streams[outVStream->index]->codecpar;
+    if(avcodec_parameters_copy(outCodecPara,codecPara)<0){
+        printf("Cannot copy codec para.\n");
+        return -1;
+    }
+    if(avcodec_parameters_to_context(outCodecCtx,outCodecPara)<0){
+        printf("Cannot alloc codec ctx from para.\n");
+        return -1;
+    }
+    outCodecCtx->time_base.den=25;
+    outCodecCtx->time_base.num=1;
+
+    //打开输出文件需要的编码器
+    if(avcodec_open2(outCodecCtx,outCodec,NULL)<0){
+        printf("Cannot open output codec.\n");
+        return -1;
+    }
+
+    printf("============Output Information=============>\n");
+    av_dump_format(outFmtCtx,0,outFileName,1);
+    printf("============Output Information=============<\n");
+
+    //写入文件头
+    if(avformat_write_header(outFmtCtx,NULL)<0){
+        printf("Cannot write header to file.\n");
+        return -1;
+    }
+
+    //===============编码部分===============//
+
+    AVPacket *pkt=av_packet_alloc();
+    av_init_packet(pkt);
+    AVStream *inVStream = inVFmtCtx->streams[inVStreamIndex];
+    while(av_read_frame(inVFmtCtx,pkt)>=0){//循环读取每一帧直到读完
+        if(pkt->stream_index==inVStreamIndex){//确保处理的是视频流
+            //FIXME：No PTS (Example: Raw H.264)
+            //Simple Write PTS
+            //如果当前处理帧的显示时间戳为0或者没有等等不是正常值
+            if(pkt->pts==AV_NOPTS_VALUE){
+                printf("frame_index:%d\n", frame_index);
+                //Write PTS
+                AVRational time_base1 = inVStream->time_base;
+                //Duration between 2 frames (us)
+                int64_t calc_duration = (double)AV_TIME_BASE / av_q2d(inVStream->r_frame_rate);
+                //Parameters
+                pkt->pts = (double)(frame_index*calc_duration) / (double)(av_q2d(time_base1)*AV_TIME_BASE);
+                pkt->dts = pkt->pts;
+                pkt->duration = (double)calc_duration / (double)(av_q2d(time_base1)*AV_TIME_BASE);
+                frame_index++;
+            }
+            //Convert PTS/DTS
+            pkt->pts = av_rescale_q_rnd(pkt->pts, inVStream->time_base, outVStream->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+            pkt->dts = av_rescale_q_rnd(pkt->dts, inVStream->time_base, outVStream->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+            pkt->duration = av_rescale_q(pkt->duration, inVStream->time_base, outVStream->time_base);
+            pkt->pos = -1;
+            pkt->stream_index = outVStreamIndex;
+            printf("Write 1 Packet. size:%5d\tpts:%ld\n", pkt->size, pkt->pts);
+            //Write
+            if (av_interleaved_write_frame(outFmtCtx, pkt) < 0) {
+                printf("Error muxing packet\n");
+                break;
+            }
+            av_packet_unref(pkt);
+        }
+    }
+
+    av_write_trailer(outFmtCtx);
+
+    //=================释放所有指针=======================
+    av_packet_free(&pkt);
+    av_free(inVStream);
+    av_free(outVStream);
+    avformat_close_input(&outFmtCtx);
+    avcodec_close(outCodecCtx);
+    avcodec_free_context(&outCodecCtx);
+    av_free(outCodec);
+    avcodec_parameters_free(&outCodecPara);
+    avcodec_parameters_free(&codecPara);
+    avformat_close_input(&inVFmtCtx);
+    avformat_free_context(inVFmtCtx);
+    avio_close(outFmtCtx->pb);
 
     return 0;
 }

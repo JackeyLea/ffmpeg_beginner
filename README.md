@@ -23,3 +23,7 @@ ffmpeg入门系列教程代码
 ### ffmpeg_video_encode_yuv2h264
 
 将yuv源视频文件编码为h264格式的文件
+
+### ffmpeg_video_encode_h2642mp4
+
+将h264编码为mp4格式文件
