@@ -27,3 +27,11 @@ ffmpeg入门系列教程代码
 ### ffmpeg_video_encode_h2642mp4
 
 将h264编码为mp4格式文件
+
+### ffmpeg_audio_decode_mp32pcm
+
+将mp3文件解码为pcm文件
+
+### ffmpeg_audio_decode_mp32pcm_swr
+
+将mp3音频重采样解码为pcm
