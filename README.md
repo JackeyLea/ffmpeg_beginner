@@ -12,11 +12,11 @@ ffmpeg入门系列教程代码
 
 输出视频的基本信息（时长、码率、编码方式等等）
 
-### ffmpeg_decode_flow
+### ffmpeg_video_decode_flow
 
 视频解码的基本流程并输出视频信息
 
-### ffmpeg_decode_save
+### ffmpeg_video_decode_save
 
 解码视频并保存其中的50帧画面为ppm格式图片
 
@@ -35,3 +35,7 @@ ffmpeg入门系列教程代码
 ### ffmpeg_audio_decode_mp32pcm_swr
 
 将mp3音频重采样解码为pcm
+
+### ffmpeg_audio_encode_pcm2mp3
+
+将pcm格式文件编码为mp3格式
