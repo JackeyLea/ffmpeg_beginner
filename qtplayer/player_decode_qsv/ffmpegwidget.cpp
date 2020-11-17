@@ -1,20 +1,28 @@
 #include "ffmpegwidget.h"
 
+//static QString _filePath="rtsp://192.168.1.217/stream4";
+static QString _filePath = "/home/jackey/Videos/beat.mp4";
+
+typedef struct DecodeContext{
+    AVBufferRef *hw_device_ref;
+}DecodeContext;
+
+DecodeContext decode = {NULL};
+
 FFmpegVideo::FFmpegVideo()
 {}
 
 FFmpegVideo::~FFmpegVideo()
-{
-}
+{}
 
 void FFmpegVideo::ffmpeg_init_variables()
 {
+    avformat_network_init();
     fmtCtx = avformat_alloc_context();
     pkt = av_packet_alloc();
     av_init_packet(pkt);
     yuvFrame = av_frame_alloc();
     rgbFrame = av_frame_alloc();
-    audioFrame = av_frame_alloc();
 
     initFlag=true;
 }
@@ -25,9 +33,7 @@ void FFmpegVideo::ffmpeg_free_variables()
     if(!yuvFrame) av_frame_free(&yuvFrame);
     if(!rgbFrame) av_frame_free(&rgbFrame);
     if(!videoCodecCtx) avcodec_free_context(&videoCodecCtx);
-    if(!audioCodecCtx) avcodec_free_context(&audioCodecCtx);
     if(!videoCodecCtx) avcodec_close(videoCodecCtx);
-    if(!audioCodecCtx) avcodec_close(audioCodecCtx);
     if(!fmtCtx) avformat_close_input(&fmtCtx);
 }
 
@@ -51,30 +57,28 @@ int FFmpegVideo::open_input_file()
 
     int streamCnt=fmtCtx->nb_streams;
     for(int i=0;i<streamCnt;i++){
-        if(fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO){
-            videoStreamIndex = i;
-            continue;
-        }
-        if(fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
-            audioStreamIndex = i;
-            continue;
+        if(fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
+                fmtCtx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264){
+            videoStreamIndex=i;
         }
     }
 
-    if(videoStreamIndex==-1){
-        printf("Cannot find video stream in file %s.\n",url);
+    videoStream = fmtCtx->streams[videoStreamIndex];
+
+    if(!videoStream){
+        printf("No h.264 video stream in the input file.\n");
+        return  -1;
+    }
+
+    ret = av_hwdevice_ctx_create(&decode.hw_device_ref,AV_HWDEVICE_TYPE_QSV,
+                                 "auto",NULL,0);
+    if(ret <0){
+        printf("Cannot open the hardware device.\n");
         return -1;
     }
 
-    if(audioStreamIndex==-1){
-        printf("Cannot find video stream in file %s.\n",url);
-        return -1;
-    }
-
-    AVCodecParameters *videoCodecPara = fmtCtx->streams[videoStreamIndex]->codecpar;
-
-    if(!(videoCodec = avcodec_find_decoder(videoCodecPara->codec_id))){
-        printf("Cannot find valid decode codec.\n");
+    if(!(videoCodec = avcodec_find_decoder_by_name("h264_qsv"))){
+        printf("The qsv decoder is not present in libavcodec.\n");
         return -1;
     }
 
@@ -83,10 +87,23 @@ int FFmpegVideo::open_input_file()
         return -1;
     }
 
-    if(avcodec_parameters_to_context(videoCodecCtx,videoCodecPara)<0){
-        printf("Cannot initialize parameters.\n");
-        return -1;
+    videoCodecCtx->codec_id = AV_CODEC_ID_H264;
+    if(videoStream->codecpar->extradata_size){
+        videoCodecCtx->extradata = (uint8_t*)av_mallocz(videoStream->codecpar->extradata_size +
+                                              AV_INPUT_BUFFER_PADDING_SIZE);
+        if(!videoCodecCtx->extradata){
+            printf("Cannot alloc memory to data.\n");
+            return -1;
+        }
+        memcpy(videoCodecCtx->extradata,videoStream->codecpar->extradata,
+               videoStream->codecpar->extradata_size);
+        videoCodecCtx->extradata_size = videoStream->codecpar->extradata_size;
     }
+
+    videoCodecCtx->opaque = &decode;
+    videoCodecCtx->pix_fmt = AV_PIX_FMT_QSV;
+    //videoCodecCtx->get_format = &AV_PIX_FMT_QSV;
+
     if(avcodec_open2(videoCodecCtx,videoCodec,NULL)<0){
         printf("Cannot open codec.\n");
         return -1;
@@ -111,34 +128,6 @@ int FFmpegVideo::open_input_file()
         return -1;
     }
 
-    AVCodecParameters *audioCodecPara = fmtCtx->streams[audioStreamIndex]->codecpar;
-
-    if(!(audioCodec = avcodec_find_decoder(audioCodecPara->codec_id))){
-        printf("Cannot find valid audio decoder codec.");
-        return -1;
-    }
-
-    audioParser = av_parser_init(audioCodec->id);
-    if(!audioParser){
-        qDebug()<<"Cannot find audio parser.";
-        return -1;
-    }
-
-    if(!(audioCodecCtx = avcodec_alloc_context3(audioCodec))){
-        qDebug()<<"Cannot find valid decoder codec context.";
-        return -1;
-    }
-
-    if(avcodec_parameters_from_context(audioCodecPara,audioCodecCtx)<0){
-        qDebug()<<"Cannot initialize audio parameters.";
-        return -1;
-    }
-
-    if(avcodec_open2(audioCodecCtx,audioCodec,NULL)<0){
-        qDebug()<<"Cannot open audio codec.";
-        return -1;
-    }
-
     openFlag=true;
     return true;
 }
@@ -149,7 +138,7 @@ void FFmpegVideo::run()
         qDebug()<<"Please open file first.";
         return;
     }
-
+    AVFrame *result = av_frame_alloc();
     while(av_read_frame(fmtCtx,pkt)>=0){
         if(pkt->stream_index == videoStreamIndex){
             if(avcodec_send_packet(videoCodecCtx,pkt)>=0){
@@ -161,8 +150,11 @@ void FFmpegVideo::run()
                         fprintf(stderr, "Error during decoding\n");
                         exit(1);
                     }
+
+                    ret = av_hwframe_transfer_data(result,yuvFrame,0);
                     sws_scale(img_ctx,
-                              yuvFrame->data,yuvFrame->linesize,
+                              result->data,result->linesize,
+                              //yuvFrame->data,yuvFrame->linesize,
                               0,videoCodecCtx->height,
                               rgbFrame->data,rgbFrame->linesize);
 
@@ -174,6 +166,7 @@ void FFmpegVideo::run()
                 }
             }
             av_packet_unref(pkt);
+            av_frame_unref(result);
         }
     }
 }

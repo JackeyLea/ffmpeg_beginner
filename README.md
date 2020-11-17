@@ -39,3 +39,9 @@ ffmpeg入门系列教程代码
 ### ffmpeg_audio_encode_pcm2mp3
 
 将pcm格式文件编码为mp3格式
+
+### qtplayer
+
+player based on qt
+
+#### 

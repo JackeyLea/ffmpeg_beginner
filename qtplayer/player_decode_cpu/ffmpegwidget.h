@@ -47,27 +47,18 @@ signals:
     void sendQImage(QImage);
 
 private:
-    QString _filePath="/home/jackey/Videos/1.mp4";
-
     AVFormatContext *fmtCtx       =NULL;
     AVCodec         *videoCodec   =NULL;
-    AVCodec         *audioCodec   =NULL;
     AVCodecContext  *videoCodecCtx=NULL;
-    AVCodecContext  *audioCodecCtx=NULL;
     AVPacket        *pkt          = NULL;
     AVFrame         *yuvFrame     = NULL;
     AVFrame         *rgbFrame     = NULL;
-    AVFrame         *audioFrame   = NULL;
-    AVCodecParserContext *audioParser  = NULL;
 
     struct SwsContext *img_ctx=NULL;
 
     unsigned char *out_buffer;
-    uint8_t *audioOutData;
-    size_t audioOutDataSize;
 
     int videoStreamIndex =-1;
-    int audioStreamIndex = -1;
     int numBytes = -1;
 
     bool initFlag=false,openFlag=false,runFlag=false;
