@@ -50,3 +50,8 @@ compile_commands.json
 
 # QtCreator local machine specific files for imported projects
 *creator.user*
+
+
+data
+temp
+20.video_filter_qt/.qmake.stash
