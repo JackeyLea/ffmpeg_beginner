@@ -33,7 +33,7 @@
     <item row="0" column="0">
      <widget class="QLineEdit" name="lineUrl">
       <property name="text">
-       <string>rtsp://81.68.73.201/test</string>
+       <string>/home/jackey/Videos/Sample.mkv</string>
       </property>
      </widget>
     </item>
@@ -55,7 +55,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>40</height>
     </rect>
    </property>
   </widget>

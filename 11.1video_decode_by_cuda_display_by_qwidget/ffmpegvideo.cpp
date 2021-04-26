@@ -82,6 +82,7 @@ int FFmpegVideo::open_input_file()
     }
     videoStreamIndex = ret;
 
+    //获取支持该decoder的hw配置型
     for (i = 0;; i++) {
         const AVCodecHWConfig *config = avcodec_get_hw_config(videoCodec, i);
         if (!config) {

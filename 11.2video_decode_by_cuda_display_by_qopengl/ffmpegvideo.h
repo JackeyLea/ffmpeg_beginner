@@ -7,19 +7,8 @@
 #include <QThread>
 #include <QPainter>
 #include <QDebug>
-#include <QDateTime>
-#include <QOpenGLBuffer>
-#include <QOpenGLContext>
-#include <QOpenGLFunctions>
-#include <QOpenGLShader>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLTexture>
-#include <QOpenGLWidget>
-#include <QMutex>
 
 #include <string>
-#include <iostream>
-#include <ostream>
 
 extern "C"{
 #include <libavcodec/avcodec.h>
@@ -45,26 +34,70 @@ class FFmpegVideo : public QThread
 {
     Q_OBJECT
 public:
-    FFmpegVideo(QObject *parent=nullptr);
+    explicit FFmpegVideo();
     ~FFmpegVideo();
 
-    void setUrl(QString url);
+    void setPath(QString url);
+
+    void ffmpeg_init_variables();
+    void ffmpeg_free_variables();
     int open_input_file();
     static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
                                             const enum AVPixelFormat *pix_fmts);
     static int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type);
+
+    void stopThread();
+
 protected:
     void run();
 
 signals:
-    void sigStarted(uchar *,int,int);
-    void sigNewFrame();
+    void sendQImage(const QImage &img);
 
 private:
-    QString _filePath;
+    AVFormatContext *fmtCtx       =NULL;
+    AVCodec         *videoCodec   =NULL;
+    AVCodecContext  *videoCodecCtx=NULL;
+    AVPacket        *pkt          = NULL;
+    AVFrame         *yuvFrame     = NULL;
+    AVFrame         *rgbFrame     = NULL;
+    AVFrame         *nv12Frame    = NULL;
+    AVStream        *videoStream  = NULL;
+
     uchar *out_buffer;
+    struct SwsContext *img_ctx=NULL;
+
+    QString _filePath;
+
+    int videoStreamIndex =-1;
+    int numBytes = -1;
+
     int ret =0;
-    bool isFirst = true;
+
+    bool initFlag=false,openFlag=false,stopFlag=false;
+};
+
+
+class FFmpegWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit FFmpegWidget(QWidget *parent = nullptr);
+    ~FFmpegWidget();
+
+    void play(QString url);
+    void stop();
+
+protected:
+    void paintEvent(QPaintEvent *);
+
+private slots:
+    void receiveQImage(const QImage &rImg);
+
+private:
+    FFmpegVideo *ffmpeg;
+
+    QImage img;
 };
 
 #endif // FFMPEGVIDEO_H

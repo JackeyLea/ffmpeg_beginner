@@ -9,15 +9,132 @@ DecodeContext decode = {NULL};
 static enum AVPixelFormat hw_pix_fmt;
 static AVBufferRef* hw_device_ctx=NULL;
 
-FFmpegVideo::FFmpegVideo(QObject *parent)
+FFmpegVideo::FFmpegVideo()
 {}
 
 FFmpegVideo::~FFmpegVideo()
 {}
 
-void FFmpegVideo::setUrl(QString url)
+void FFmpegVideo::setPath(QString url)
 {
     _filePath=url;
+}
+
+void FFmpegVideo::ffmpeg_init_variables()
+{
+    avformat_network_init();
+    fmtCtx = avformat_alloc_context();
+    pkt = av_packet_alloc();
+    av_init_packet(pkt);
+    yuvFrame = av_frame_alloc();
+    rgbFrame = av_frame_alloc();
+    nv12Frame = av_frame_alloc();
+
+    initFlag=true;
+}
+
+void FFmpegVideo::ffmpeg_free_variables()
+{
+    if(!pkt) av_packet_free(&pkt);
+    if(!yuvFrame) av_frame_free(&yuvFrame);
+    if(!rgbFrame) av_frame_free(&rgbFrame);
+    if(!nv12Frame) av_frame_free(&nv12Frame);
+    if(!videoCodecCtx) avcodec_free_context(&videoCodecCtx);
+    if(!videoCodecCtx) avcodec_close(videoCodecCtx);
+    if(!fmtCtx) avformat_close_input(&fmtCtx);
+}
+
+int FFmpegVideo::open_input_file()
+{
+    if(!initFlag){
+        ffmpeg_init_variables();
+        qDebug()<<"init variables done";
+    }
+
+    enum AVHWDeviceType type;
+    int i;
+
+    type = av_hwdevice_find_type_by_name("cuda");
+    if (type == AV_HWDEVICE_TYPE_NONE) {
+        fprintf(stderr, "Device type %s is not supported.\n", "h264_cuvid");
+        fprintf(stderr, "Available device types:");
+        while((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
+            fprintf(stderr, " %s", av_hwdevice_get_type_name(type));
+        fprintf(stderr, "\n");
+        return -1;
+    }
+
+    /* open the input file */
+    if (avformat_open_input(&fmtCtx, _filePath.toLocal8Bit().data(), NULL, NULL) != 0) {
+        return -1;
+    }
+
+    if (avformat_find_stream_info(fmtCtx, NULL) < 0) {
+        fprintf(stderr, "Cannot find input stream information.\n");
+        return -1;
+    }
+
+    /* find the video stream information */
+    ret = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &videoCodec, 0);
+    if (ret < 0) {
+        fprintf(stderr, "Cannot find a video stream in the input file\n");
+        return -1;
+    }
+    videoStreamIndex = ret;
+
+    for (i = 0;; i++) {
+        const AVCodecHWConfig *config = avcodec_get_hw_config(videoCodec, i);
+        if (!config) {
+            fprintf(stderr, "Decoder %s does not support device type %s.\n",
+                    videoCodec->name, av_hwdevice_get_type_name(type));
+            return -1;
+        }
+        if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
+                config->device_type == type) {
+            hw_pix_fmt = config->pix_fmt;
+            break;
+        }
+    }
+
+    if (!(videoCodecCtx = avcodec_alloc_context3(videoCodec)))
+        return AVERROR(ENOMEM);
+
+    videoStream = fmtCtx->streams[videoStreamIndex];
+    if (avcodec_parameters_to_context(videoCodecCtx, videoStream->codecpar) < 0)
+        return -1;
+
+    videoCodecCtx->get_format  = get_hw_format;
+
+    if (hw_decoder_init(videoCodecCtx, type) < 0)
+        return -1;
+
+    if ((ret = avcodec_open2(videoCodecCtx, videoCodec, NULL)) < 0) {
+        fprintf(stderr, "Failed to open codec for stream #%u\n", videoStreamIndex);
+        return -1;
+    }
+
+    img_ctx = sws_getContext(videoCodecCtx->width,
+                             videoCodecCtx->height,
+                             AV_PIX_FMT_NV12,
+                             videoCodecCtx->width,
+                             videoCodecCtx->height,
+                             AV_PIX_FMT_RGB32,
+                             SWS_BICUBIC,NULL,NULL,NULL);
+
+    numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB32,videoCodecCtx->width,videoCodecCtx->height,1);
+    out_buffer = (unsigned char *)av_malloc(numBytes*sizeof(uchar));
+
+    int res = av_image_fill_arrays(
+                rgbFrame->data,rgbFrame->linesize,
+                out_buffer,AV_PIX_FMT_RGB32,
+                videoCodecCtx->width,videoCodecCtx->height,1);
+    if(res<0){
+        qDebug()<<"Fill arrays failed.";
+        return -1;
+    }
+
+    openFlag=true;
+    return true;
 }
 
 AVPixelFormat FFmpegVideo::get_hw_format(AVCodecContext *ctx, const AVPixelFormat *pix_fmts)
@@ -47,96 +164,21 @@ int FFmpegVideo::hw_decoder_init(AVCodecContext *ctx, const AVHWDeviceType type)
     return err;
 }
 
+void FFmpegVideo::stopThread()
+{
+    stopFlag=true;
+}
+
+static FILE *output_file=NULL;
+
 void FFmpegVideo::run()
 {
-    AVFormatContext *fmtCtx       =NULL;
-    AVCodec         *videoCodec   =NULL;
-    AVCodecContext  *videoCodecCtx=NULL;
-    AVPacket        *pkt          = NULL;
-    AVFrame         *yuvFrame     = NULL;
-    AVFrame         *rgbFrame     = NULL;
-    AVFrame         *nv12Frame    = NULL;
-    AVStream        *videoStream  = NULL;
-
-    int videoStreamIndex =-1;
-    int numBytes = -1;
-    int width,height;
-    avformat_network_init();
-    fmtCtx = avformat_alloc_context();
-    pkt = av_packet_alloc();
-    av_init_packet(pkt);
-    yuvFrame = av_frame_alloc();
-    rgbFrame = av_frame_alloc();
-    nv12Frame = av_frame_alloc();
-
-    enum AVHWDeviceType type;
-    int i;
-
-    type = av_hwdevice_find_type_by_name("cuda");
-    if (type == AV_HWDEVICE_TYPE_NONE) {
-        fprintf(stderr, "Device type %s is not supported.\n", "h264_cuvid");
-        fprintf(stderr, "Available device types:");
-        while((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
-            fprintf(stderr, " %s", av_hwdevice_get_type_name(type));
-        fprintf(stderr, "\n");
-        return;
+    if(!openFlag){
+        open_input_file();
     }
 
-    /* open the input file */
-    if (avformat_open_input(&fmtCtx, _filePath.toLocal8Bit().data(), NULL, NULL) != 0) {
-        return;
-    }
-
-    if (avformat_find_stream_info(fmtCtx, NULL) < 0) {
-        fprintf(stderr, "Cannot find input stream information.\n");
-        return;
-    }
-
-    /* find the video stream information */
-    ret = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &videoCodec, 0);
-    if (ret < 0) {
-        fprintf(stderr, "Cannot find a video stream in the input file\n");
-        return;
-    }
-    videoStreamIndex = ret;
-
-    for (i = 0;; i++) {
-        const AVCodecHWConfig *config = avcodec_get_hw_config(videoCodec, i);
-        if (!config) {
-            fprintf(stderr, "Decoder %s does not support device type %s.\n",
-                    videoCodec->name, av_hwdevice_get_type_name(type));
-            return;
-        }
-        if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
-                config->device_type == type) {
-            hw_pix_fmt = config->pix_fmt;
-            break;
-        }
-    }
-
-    if (!(videoCodecCtx = avcodec_alloc_context3(videoCodec)))
-        return ;
-
-    videoStream = fmtCtx->streams[videoStreamIndex];
-    if (avcodec_parameters_to_context(videoCodecCtx, videoStream->codecpar) < 0)
-        return;
-
-    videoCodecCtx->get_format  = get_hw_format;
-
-    if (hw_decoder_init(videoCodecCtx, type) < 0)
-        return;
-
-    if ((ret = avcodec_open2(videoCodecCtx, videoCodec, NULL)) < 0) {
-        fprintf(stderr, "Failed to open codec for stream #%u\n", videoStreamIndex);
-        return;
-    }
-
-    width = videoCodecCtx->width;
-    height = videoCodecCtx->height;
-    numBytes = av_image_get_buffer_size(AV_PIX_FMT_NV12,width,height,1);
-    out_buffer = (uchar *)av_malloc(numBytes*sizeof(uchar));
-
-    while(av_read_frame(fmtCtx,pkt)>=0 && !isInterruptionRequested()){
+    while(av_read_frame(fmtCtx,pkt)>=0){
+        if(stopFlag) break;
         if(pkt->stream_index == videoStreamIndex){
             if(avcodec_send_packet(videoCodecCtx,pkt)>=0){
                 int ret;
@@ -154,22 +196,17 @@ void FFmpegVideo::run()
                         }
                     }
 
-                    if(isFirst){
-                        emit sigStarted(out_buffer,width,height);
-                        isFirst=false;
-                    }
+                    sws_scale(img_ctx,
+                              (const uint8_t* const*)nv12Frame->data,
+                              (const int*)nv12Frame->linesize,
+                              0,
+                              nv12Frame->height,
+                              rgbFrame->data,rgbFrame->linesize);
 
-                    int bytes =0;
-                    for(int i=0;i<height;i++){
-                        memcpy(out_buffer+bytes,nv12Frame->data[0]+nv12Frame->linesize[0]*i,width);
-                        bytes+=width;
-                    }
-                    int uv=height>>1;
-                    for(int i=0;i<uv;i++){
-                        memcpy(out_buffer+bytes,nv12Frame->data[1]+nv12Frame->linesize[1]*i,width);
-                        bytes+=width;
-                    }
-                    emit sigNewFrame();
+                    QImage img(out_buffer,
+                               videoCodecCtx->width,videoCodecCtx->height,
+                               QImage::Format_RGB32);
+                    emit sendQImage(img);
 
                     QThread::msleep(30);
                 }
@@ -178,12 +215,47 @@ void FFmpegVideo::run()
         }
     }
     qDebug()<<"Thread stop now";
+}
 
-    if(!pkt) av_packet_free(&pkt);
-    if(!yuvFrame) av_frame_free(&yuvFrame);
-    if(!rgbFrame) av_frame_free(&rgbFrame);
-    if(!nv12Frame) av_frame_free(&nv12Frame);
-    if(!videoCodecCtx) avcodec_free_context(&videoCodecCtx);
-    if(!videoCodecCtx) avcodec_close(videoCodecCtx);
-    if(!fmtCtx) avformat_close_input(&fmtCtx);
+FFmpegWidget::FFmpegWidget(QWidget *parent) : QWidget(parent)
+{
+    ffmpeg = new FFmpegVideo;
+    connect(ffmpeg,SIGNAL(sendQImage(QImage)),this,SLOT(receiveQImage(QImage)));
+    connect(ffmpeg,&FFmpegVideo::finished,ffmpeg,&FFmpegVideo::deleteLater);
+}
+
+FFmpegWidget::~FFmpegWidget()
+{
+    qDebug()<<"exit player";
+    if(ffmpeg->isRunning()){
+        stop();
+    }
+}
+
+void FFmpegWidget::play(QString url)
+{
+    ffmpeg->setPath(url);
+    ffmpeg->start();
+}
+
+void FFmpegWidget::stop()
+{
+    if(ffmpeg->isRunning()){
+        ffmpeg->requestInterruption();
+        ffmpeg->quit();
+        ffmpeg->wait(100);
+    }
+    ffmpeg->ffmpeg_free_variables();
+}
+
+void FFmpegWidget::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.drawImage(0,0,img);
+}
+
+void FFmpegWidget::receiveQImage(const QImage &rImg)
+{
+    img = rImg.scaled(this->size());
+    update();
 }
