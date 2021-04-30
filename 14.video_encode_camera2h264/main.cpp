@@ -1,209 +1,289 @@
-/*
- * 作者：幽弥狂
- * 日期：2021-01-14
- * 功能：将摄像头获取的原始视频数据进行压缩为h264
- * opencv+ffmpeg
- */
-
 #include <iostream>
 
-//opencv
-#include <opencv2/opencv.hpp>
-
-//ffmpeg
 extern "C"{
-#include "libavcodec/avcodec.h"
-#include "libavformat/avformat.h"
-#include "libswscale/swscale.h"
-#include "libavformat/avformat.h"
-#include "libavutil/imgutils.h"
+#include <unistd.h>
+#include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
+
+#include <libavutil/channel_layout.h>
+#include <libavutil/common.h>
+#include <libavutil/frame.h>
+#include <libavutil/samplefmt.h>
+#include <libavutil/opt.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/parseutils.h>
+#include <libavutil/mem.h>
+
+#include <libswscale/swscale.h>
+
+#include <libavformat/avformat.h>
 }
 
 using namespace std;
 
-int main()
-{
-    cv::VideoCapture pCap(0);
+int flush_encoder(AVFormatContext *fmtCtx, AVCodecContext *codecCtx, int vStreamIndex){
+    int      ret=0;
+    AVPacket enc_pkt;
+    enc_pkt.data = NULL;
+    enc_pkt.size = 0;
+    av_init_packet(&enc_pkt);
 
-    filename = "test.h264";
-    AVCodec *codec;
-    AVCodecContext *c = NULL;
-    int i, ret, x, y, got_output;
-    FILE *f;
-    AVFrame *frame;
-    AVPacket pkt;
-    uint8_t endcode[] = {0, 0, 1, 0xb7};
+    if (!(codecCtx->codec->capabilities & AV_CODEC_CAP_DELAY))
+        return 0;
 
-    printf("Encode video file %s\n", filename);
+    printf("Flushing stream #%u encoder\n",vStreamIndex);
+    if(avcodec_send_frame(codecCtx,0)>=0){
+        while(avcodec_receive_packet(codecCtx,&enc_pkt)>=0){
+            printf("success encoder 1 frame.\n");
 
-    AVCodecID codec_id = AV_CODEC_ID_H264;
-    /* find the mpeg1 video encoder */
-    codec = avcodec_find_encoder((AVCodecID)codec_id);
-    if (!codec)
-    {
-        fprintf(stderr, "Codec not found\n");
-        exit(0);
-    }
-
-    c = avcodec_alloc_context3(codec);
-    if (!c)
-    {
-        fprintf(stderr, "Could not allocate video codec context\n");
-        exit(1);
-    }
-
-    /* put sample parameters */
-    c->bit_rate = 200000;
-    /* resolution must be a multiple of two */
-    c->width = 640;
-    c->height = 480;
-    /* frames per second */
-    AVRational avtmp = {1, 25}; //25
-    c->time_base = avtmp;       //(AVRational){1,25};
-    c->gop_size = 5;            //每10帧插入一帧关键帧
-    c->max_b_frames = 0;
-    c->pix_fmt = AV_PIX_FMT_YUV420P; //AV_PIX_FMT_YUV420P;
-
-    if (codec_id == AV_CODEC_ID_H264)
-        av_opt_set(c->priv_data, "tune", "zerolatency", 0);
-    // av_opt_set(c->priv_data, "preset", "slow", 0);
-    /********************************************************************************
-       * 有两个地方影响libav是不是缓存编码后的视频帧，也就是影响实时性：
-       * 1、av_opt_set(c->priv_data, "tune", "zerolatency", 0);这个比较主要。
-       * 2、参数中有c->max_b_frames = 1;如果这个帧设为0,就没有B帧了，编码会很快的。
-       ********************************************************************************/
-    /* open it */
-    if (avcodec_open2(c, codec, NULL) < 0)
-    {
-        fprintf(stderr, "Could not open codec\n");
-        exit(1);
-    }
-
-    f = fopen(filename, "wb");
-    if (!f)
-    {
-        fprintf(stderr, "Could not open %s\n", filename);
-        exit(1);
-    }
-
-    frame = av_frame_alloc();
-    if (!frame)
-    {
-        fprintf(stderr, "Could not allocate video frame\n");
-        exit(1);
-    }
-    frame->format = c->pix_fmt;
-    frame->width = c->width;
-    frame->height = c->height;
-
-    /* the image can be allocated by any means and av_image_alloc() is
-     * just the most convenient way if av_malloc() is to be used */
-    ret = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
-                         c->pix_fmt, 32);
-    if (ret < 0)
-    {
-        fprintf(stderr, "Could not allocate raw picture buffer\n");
-        exit(1);
-    }
-
-    int index = 0;
-    int frameCount = 0;
-    /* encode  video */
-
-    cv::Mat frame;
-    while(true){
-        pCap >> frame;
-
-        if(frame.data==NULL){
-            break;
-        }
-
-        cv::imshow("camera",frame);
-
-        frameCount=0;
-        av_init_packet(&pkt);
-        pkt.data = NULL; // packet data will be allocated by the encoder
-        pkt.size = 0;
-
-        fflush(stdout);
-
-        CvScalar pixel;
-        for (y = 0; y < c->height; y++)
-        {
-            for (x = 0; x < c->width; x++)
-            {
-                pixel = cvGet2D(pFrame, y, x);
-                int Red = pixel.val[2];
-                int Green = pixel.val[1];
-                int Blue = pixel.val[0];
-                int Y = (77 * Red / 256) + (150 * Green / 256) + (29 * Blue / 256);
-                int Cb = -(44 * Red / 256) - (87 * Green / 256) + (131 * Blue / 256) + 128;
-                int Cr = (131 * Red / 256) - (110 * Green / 256) - (21 * Blue / 256) + 128;
-
-                frame->data[0][y * frame->linesize[0] + x] = Y;
-                if (x % 2 == 0 && y % 2 == 0)
-                {
-                    frame->data[1][(y / 2) * frame->linesize[1] + x / 2] = Cb;
-                    frame->data[2][(y / 2) * frame->linesize[2] + x / 2] = Cr;
-                }
-                //frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
-                //frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
+            // parpare packet for muxing
+            enc_pkt.stream_index = vStreamIndex;
+            av_packet_rescale_ts(&enc_pkt,codecCtx->time_base,
+                                 fmtCtx->streams[ vStreamIndex ]->time_base);
+            ret = av_interleaved_write_frame(fmtCtx, &enc_pkt);
+            if(ret<0){
+                break;
             }
         }
-
-        cvReleaseImage(&pFrame);
-        //continue;
-
-        frame->pts = index;
-
-        /* encode the image */
-        ret = avcodec_encode_video2(c, &pkt, frame, &got_output);
-        if (ret < 0)
-        {
-            fprintf(stderr, "Error encoding frame\n");
-            exit(1);
-        }
-
-        if (got_output)
-        {
-            printf("Write 1frame %d (size=%d)\n", (int)(index++ / 25), pkt.size);
-            fwrite(pkt.data, 1, pkt.size, f);
-            av_free_packet(&pkt);
-        }
-
-        cv::waitKey(30);
-    }
-    //end encode
-
-
-    /* get the delayed frames */
-    for (got_output = 1; got_output; index++)
-    {
-        fflush(stdout);
-
-        ret = avcodec_encode_video2(c, &pkt, NULL, &got_output);
-        if (ret < 0)
-        {
-            fprintf(stderr, "Error encoding frame\n");
-            exit(1);
-        }
-
-        if (got_output)
-        {
-            printf("Write 2frame %d (size=%d)\n", (int)(index / 25), pkt.size);
-            //upsocket->SendData(pkt.data,pkt.size);
-            fwrite(pkt.data, 1, pkt.size, f);
-            av_free_packet(&pkt);
-        }
     }
 
-    /* add sequence end code to have a real mpeg file */
-    fwrite(endcode, 1, sizeof(endcode), f);
-    fclose(f);
+    return ret;
+}
 
-    avcodec_close(c);
-    av_free(c);
-    av_freep(&frame->data[0]);
-    av_frame_free(&frame);
+int main()
+{
+    int ret = 0;
+    avdevice_register_all();
+
+    /////////////解码器部分//////////////////////
+    AVFormatContext *inFmtCtx = avformat_alloc_context();
+    AVCodecContext  *inCodecCtx = NULL;
+    AVCodec         *inCodec =NULL;
+    AVPacket        *inPkt =av_packet_alloc();
+    AVFrame         *srcFrame =av_frame_alloc();
+    AVFrame         *yuvFrame =av_frame_alloc();
+
+    struct SwsContext *img_ctx = NULL;
+
+    int inVideoStreamIndex = -1;
+
+    //打开摄像头
+    AVInputFormat *inFmt = av_find_input_format("v4l2");
+    if(avformat_open_input(&inFmtCtx,"/dev/video0",inFmt,NULL)<0){
+        printf("Cannot open camera.\n");
+        return -1;
+    }
+
+    if(avformat_find_stream_info(inFmtCtx,NULL)<0){
+        printf("Cannot find any stream in file.\n");
+        return -1;
+    }
+
+    for(size_t i=0;i<inFmtCtx->nb_streams;i++){
+        if(inFmtCtx->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO){
+            inVideoStreamIndex=i;
+            break;
+        }
+    }
+    if(inVideoStreamIndex==-1){
+        printf("Cannot find video stream in file.\n");
+        return -1;
+    }
+
+    AVCodecParameters *inVideoCodecPara = inFmtCtx->streams[inVideoStreamIndex]->codecpar;
+    if(!(inCodec=avcodec_find_decoder(inVideoCodecPara->codec_id))){
+        printf("Cannot find valid video decoder.\n");
+        return -1;
+    }
+    if(!(inCodecCtx = avcodec_alloc_context3(inCodec))){
+        printf("Cannot alloc valid decode codec context.\n");
+        return -1;
+    }
+    if(avcodec_parameters_to_context(inCodecCtx,inVideoCodecPara)<0){
+        printf("Cannot initialize parameters.\n");
+        return -1;
+    }
+
+    if(avcodec_open2(inCodecCtx,inCodec,NULL)<0){
+        printf("Cannot open codec.\n");
+        return -1;
+    }
+
+    img_ctx = sws_getContext(inCodecCtx->width,
+                             inCodecCtx->height,
+                             inCodecCtx->pix_fmt,
+                             inCodecCtx->width,
+                             inCodecCtx->height,
+                             AV_PIX_FMT_YUV420P,
+                             SWS_BICUBIC,
+                             NULL,NULL,NULL);
+
+    int numBytes = av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
+                                            inCodecCtx->width,
+                                            inCodecCtx->height,1);
+    uint8_t* out_buffer = (unsigned char*)av_malloc(numBytes*sizeof(unsigned char));
+
+    ret = av_image_fill_arrays(yuvFrame->data,
+                               yuvFrame->linesize,
+                               out_buffer,
+                               AV_PIX_FMT_YUV420P,
+                               inCodecCtx->width,
+                               inCodecCtx->height,
+                               1);
+    if(ret<0){
+        printf("Fill arrays failed.\n");
+        return -1;
+    }
+    //////////////解码器部分结束/////////////////////
+
+    //////////////编码器部分开始/////////////////////
+    const char* outFile = "result.h264";
+
+    AVOutputFormat *outFmt = NULL;
+    AVCodecContext *outCodecCtx=NULL;
+    AVCodec        *outCodec = NULL;
+    AVStream *outVStream     = NULL;
+
+    AVPacket *outPkt = av_packet_alloc();
+
+    //打开输出文件，并填充fmtCtx数据
+    AVFormatContext *outFmtCtx = avformat_alloc_context();
+    if(avformat_alloc_output_context2(&outFmtCtx,NULL,NULL,outFile)<0){
+        printf("Cannot alloc output file context.\n");
+        return -1;
+    }
+    outFmt = outFmtCtx->oformat;
+
+    //打开输出文件
+    if(avio_open(&outFmtCtx->pb,outFile,AVIO_FLAG_READ_WRITE)<0){
+        printf("output file open failed.\n");
+        return -1;
+    }
+
+    //创建h264视频流，并设置参数
+    outVStream = avformat_new_stream(outFmtCtx,outCodec);
+    if(outVStream==nullptr){
+        printf("create new video stream fialed.\n");
+        return -1;
+    }
+    outVStream->time_base.den=30;
+    outVStream->time_base.num=1;
+
+    //编码参数相关
+    AVCodecParameters *outCodecPara = outFmtCtx->streams[outVStream->index]->codecpar;
+    outCodecPara->codec_type=AVMEDIA_TYPE_VIDEO;
+    outCodecPara->codec_id = outFmt->video_codec;
+    outCodecPara->width = 480;
+    outCodecPara->height = 360;
+    outCodecPara->bit_rate = 110000;
+
+    //查找编码器
+    outCodec = avcodec_find_encoder(outFmt->video_codec);
+    if(outCodec==NULL){
+        printf("Cannot find any encoder.\n");
+        return -1;
+    }
+
+    //设置编码器内容
+    outCodecCtx = avcodec_alloc_context3(outCodec);
+    avcodec_parameters_to_context(outCodecCtx,outCodecPara);
+    if(outCodecCtx==NULL){
+        printf("Cannot alloc output codec content.\n");
+        return -1;
+    }
+    outCodecCtx->codec_id = outFmt->video_codec;
+    outCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
+    outCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+    outCodecCtx->width = inCodecCtx->width;
+    outCodecCtx->height = inCodecCtx->height;
+    outCodecCtx->time_base.num=1;
+    outCodecCtx->time_base.den=30;
+    outCodecCtx->bit_rate=110000;
+    outCodecCtx->gop_size=10;
+
+    if(outCodecCtx->codec_id==AV_CODEC_ID_H264){
+        outCodecCtx->qmin=10;
+        outCodecCtx->qmax=51;
+        outCodecCtx->qcompress=(float)0.6;
+    }else if(outCodecCtx->codec_id==AV_CODEC_ID_MPEG2VIDEO){
+        outCodecCtx->max_b_frames=2;
+    }else if(outCodecCtx->codec_id==AV_CODEC_ID_MPEG1VIDEO){
+        outCodecCtx->mb_decision=2;
+    }
+
+    //打开编码器
+    if(avcodec_open2(outCodecCtx,outCodec,NULL)<0){
+        printf("Open encoder failed.\n");
+        return -1;
+    }
+    ///////////////编码器部分结束////////////////////
+
+    ///////////////编解码部分//////////////////////
+    yuvFrame->format = outCodecCtx->pix_fmt;
+    yuvFrame->width = outCodecCtx->width;
+    yuvFrame->height = outCodecCtx->height;
+
+    ret = avformat_write_header(outFmtCtx,NULL);
+
+    int count = 0;
+    while(av_read_frame(inFmtCtx,inPkt)>=0 && count<50){
+        if(inPkt->stream_index == inVideoStreamIndex){
+            if(avcodec_send_packet(inCodecCtx,inPkt)>=0){
+                while((ret=avcodec_receive_frame(inCodecCtx,srcFrame))>=0){
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+                        return -1;
+                    else if (ret < 0) {
+                        fprintf(stderr, "Error during decoding\n");
+                        exit(1);
+                    }
+                    sws_scale(img_ctx,
+                              srcFrame->data,srcFrame->linesize,
+                              0,inCodecCtx->height,
+                              yuvFrame->data,yuvFrame->linesize);
+
+                    yuvFrame->pts=srcFrame->pts;
+                    //encode
+                    if(avcodec_send_frame(outCodecCtx,yuvFrame)>=0){
+                        if(avcodec_receive_packet(outCodecCtx,outPkt)>=0){
+                            printf("encode one frame.\n");
+                            ++count;
+                            outPkt->stream_index = outVStream->index;
+                            av_packet_rescale_ts(outPkt,outCodecCtx->time_base,
+                                                 outVStream->time_base);
+                            outPkt->pos=-1;
+                            av_interleaved_write_frame(outFmtCtx,outPkt);
+                            av_packet_unref(outPkt);
+                        }
+                    }
+                    usleep(1000*24);
+                }
+            }
+            av_packet_unref(inPkt);
+        }
+    }
+
+    ret = flush_encoder(outFmtCtx,outCodecCtx,outVStream->index);
+    if(ret<0){
+        printf("flushing encoder failed.\n");
+        return -1;
+    }
+
+    av_write_trailer(outFmtCtx);
+
+    ////////////////编解码部分结束////////////////
+
+    ///////////内存释放部分/////////////////////////
+    av_packet_free(&inPkt);
+    avcodec_free_context(&inCodecCtx);
+    avcodec_close(inCodecCtx);
+    avformat_close_input(&inFmtCtx);
+    av_frame_free(&srcFrame);
+    av_frame_free(&yuvFrame);
+
+    av_packet_free(&outPkt);
+    avcodec_free_context(&outCodecCtx);
+    avcodec_close(outCodecCtx);
+    avformat_close_input(&outFmtCtx);
+
     return 0;
 }
