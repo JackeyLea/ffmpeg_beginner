@@ -1,7 +1,8 @@
 #include "ffmpegwidget.h"
 
 FFmpegVideo::FFmpegVideo()
-{}
+{
+}
 
 FFmpegVideo::~FFmpegVideo()
 {}
@@ -64,7 +65,7 @@ int FFmpegVideo::open_input_file()
         return -1;
     }
 
-    qDebug()<<videoStreamIndex;
+    av_dump_format(fmtCtx,videoStreamIndex,_url.toLocal8Bit().data(),0);
 
     AVCodecParameters *videoCodecPara = fmtCtx->streams[videoStreamIndex]->codecpar;
 
@@ -86,6 +87,9 @@ int FFmpegVideo::open_input_file()
         printf("Cannot open codec.\n");
         return -1;
     }
+    videoWidth = videoCodecCtx->width;
+    videoHeight = videoCodecCtx->height;
+
     img_ctx = sws_getContext(videoCodecCtx->width,
                              videoCodecCtx->height,
                              videoCodecCtx->pix_fmt,
@@ -131,8 +135,11 @@ void FFmpegVideo::initFilter()
     if(!outFilter||!inFilter||!filterGraph){
         ret = AVERROR(ENOMEM);
     }
-    //char args[512]="video_size=852x480:time_base=1/20";
-    char args[512]="";
+
+    QString qargs=QString("video_size=%1x%2:pix_fmt=0:time_base=1/20")
+            .arg(videoWidth)
+            .arg(videoHeight);
+    char* args=qargs.toLocal8Bit().data();
 
     //根据指定的Filter，这里就是buffer，构造对应的初始化参数args，二者结合即可创建Filter的示例，并放入filter_graph中
     int ret = avfilter_graph_create_filter(&bufSrcCtx,
@@ -174,7 +181,6 @@ void FFmpegVideo::initFilter()
 
     //filter_descr是一个filter命令，例如"overlay=iw:ih"，该函数可以解析这个命令，
     //然后自动完成FilterGraph中各个Filter之间的联接
-    //char filterDesc[]="eq=contrast=1:brightness=0";
     ret = avfilter_graph_parse_ptr(filterGraph,
                                    //filterDesc,
                                    filterDescr.toStdString().data(),
@@ -228,22 +234,12 @@ void FFmpegVideo::run()
                         exit(1);
                     }
 
-                    //获取PTS
-                    //av_packet_rescale_ts(pkt,videoCodecCtx->time_base,fmtCtx->streams[videoStreamIndex]->time_base);
-
-                    //yuvFrame->pts = av_frame_get_best_effort_timestamp(yuvFrame);
-
                     /* push the decoded frame into the filtergraph */
                     if (av_buffersrc_add_frame_flags(bufSrcCtx, yuvFrame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
                         av_log(NULL, AV_LOG_ERROR, "Error while feeding the filtergraph\n");
                         break;
                     }
 
-                    //把解码后视频帧添加到filtergraph
-//                     if(av_buffersrc_add_frame(bufSrcCtx,yuvFrame)<0){
-//                         printf("Cannot add frame to bufSrcCtx.\n");
-//                         break;
-//                     }
                     //把滤波后的视频帧从filter graph取出来
                     if(av_buffersink_get_frame(bufSinkCtx,filterFrame)<0){
                         printf("Cannot get frame from bufSinkCtx.\n");
