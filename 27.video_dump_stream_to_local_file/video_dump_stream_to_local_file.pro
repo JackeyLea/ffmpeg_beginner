@@ -3,6 +3,7 @@ CONFIG += console c++11
 CONFIG -= app_bundle
 CONFIG -= qt
 
+
 # 包含FFmpeg库文件位置
 
 # windows平台

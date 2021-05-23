@@ -4,7 +4,6 @@ FFmpegVideo::FFmpegVideo()
 {
     fmtCtx = avformat_alloc_context();
     pkt = av_packet_alloc();
-    av_init_packet(pkt);
     yuvFrame = av_frame_alloc();
     rgbFrame = av_frame_alloc();
 }

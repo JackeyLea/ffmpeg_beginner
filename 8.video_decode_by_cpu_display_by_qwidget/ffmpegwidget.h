@@ -56,7 +56,7 @@ private:
 
     struct SwsContext *img_ctx=NULL;
 
-    unsigned char *out_buffer;
+    unsigned char *out_buffer=nullptr;
 
     int videoStreamIndex =-1;
     int numBytes = -1;
