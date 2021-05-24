@@ -28,4 +28,4 @@ unix{
 
 
 SOURCES += \
-        main.cpp
+    main.c
