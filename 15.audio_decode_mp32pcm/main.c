@@ -11,7 +11,7 @@
 
 int main()
 {
-    const char inFileName[] = "test.mp3";
+    const char inFileName[] = "/home/jackey/Music/test.mp3";
     const char outFileName[] = "test.pcm";
     FILE *file=fopen(outFileName,"w+b");
     if(!file){
@@ -61,6 +61,7 @@ int main()
             printf("Cannot alloc codec context.\n");
             return -1;
         }
+        codecCtx->pkt_timebase = fmtCtx->streams[aStreamIndex]->time_base;
 
         if(avcodec_open2(codecCtx,codec,NULL)<0){
             printf("Cannot open audio codec.\n");
