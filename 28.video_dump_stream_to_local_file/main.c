@@ -8,13 +8,12 @@
 #include "libavutil/avutil.h"
 #include "libavutil/mathematics.h"
 
-// 将H264转封装为MP4
 int main(){
     AVFormatContext *inVFmtCtx=NULL,*outFmtCtx=NULL;
 
     int frame_index=0;//统计帧数
     int inVStreamIndex=-1,outVStreamIndex=-1;//输入输出视频流在文件中的索引位置
-    const char *inVFileName = "rtsp://192.168.1.107/test";
+    const char *inVFileName = "rtsp://192.168.1.103/test";
     const char *outFileName = "result.mp4";
 
     //======================输入部分============================//
