@@ -2,7 +2,7 @@
 
 ffmpeg入门系列教程代码
 
-<a href="https://feater.top/series/ffmpeg/78/">FFmpeg4入门系列教程索引</a>
+<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes">FFmpeg4入门系列教程索引</a>
 
 ## 源码
 
