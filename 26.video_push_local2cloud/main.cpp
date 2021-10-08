@@ -23,7 +23,7 @@ int main()
 
         const char *inFilename = "/home/jackey/Videos/test.mp4"; //输入URL
         const char *outFilename = "rtsp://localhost/test";       //输出URL
-        const char *ofmtName = NULL;
+        const char *ofmtName = "rtsp";//输出格式;
 
         AVDictionary *dict = NULL;
         av_dict_set(&dict, "rtsp_transport", "tcp", 0);
@@ -59,8 +59,6 @@ int main()
 
         // 2. 打开输出
         // 2.1 分配输出ctx
-        ofmtName = "rtsp";//输出格式
-
         avformat_alloc_output_context2(&ofmtCtx, NULL, ofmtName, outFilename);
         if (!ofmtCtx)
         {
