@@ -22,7 +22,7 @@ extern "C"
 
 int avcodec_save_audio_file(AVFormatContext *pFormatCtx, int streamIndex, char *fileName)
 {
-    AVCodec *pCodec;
+    const AVCodec *pCodec;
     AVCodecContext *pCodecCtx;
     AVCodecParameters *codecpar = pFormatCtx->streams[streamIndex]->codecpar;
 
@@ -140,7 +140,7 @@ int avcodec_save_audio_file(AVFormatContext *pFormatCtx, int streamIndex, char *
  */
 int avcodec_save_video_file(AVFormatContext *pFormatCtx, int streamIndex, char *fileName)
 {
-    AVCodec *pCodec;
+    const AVCodec *pCodec;
     AVCodecContext *pCodecCtx;
     AVCodecParameters *codecpar = pFormatCtx->streams[streamIndex]->codecpar;
 
@@ -236,7 +236,7 @@ int avcodec_save_video_file(AVFormatContext *pFormatCtx, int streamIndex, char *
     return 0;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
     AVFormatContext *pFormatCtx;
 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
     int videoStreamIndex = -1;
     unsigned int i = 0;
 
-    char inputFile[128] = "/home/jackey/Videos/test.mkv";
+    char inputFile[128] = "/home/jackey/Videos/Sample.flv";
     char outAudioFile[128] = "out.pcm";
     char outVideoFile[128] = "out.yuv";
 

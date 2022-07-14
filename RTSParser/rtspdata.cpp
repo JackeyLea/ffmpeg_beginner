@@ -2,6 +2,8 @@
 
 RTSPData::RTSPData()
 {
+    packet_buffer = new uint8_t[16 * 1024 * 1024];
+    packet_wpos = 0;
 }
 
 int RTSPData::rtspInit(const char *url)
@@ -99,14 +101,13 @@ int RTSPData::rtsp_read()
 }
 
 #define _rtsp_remaining ((size_t)(rtp_read>rtp_write?(rtp_size - (rtp_read - rtp_write)):(rtp_write - rtp_read)))
-extern uint8_t         *packet_buffer;
-extern uint32_t        packet_wpos;
 
 int RTSPData::rtsp_packet()
 {
-    int hasNext;
     if (_rtsp_remaining <= sizeof(RtspCntHeader_st))
         return 0;
+
+    int hasNext = 0;
 
     do {
         hasNext = 0;
@@ -570,6 +571,7 @@ int RTSPData::rtsp_init()
 
 void RTSPData::run()
 {
+    int i=0;
     while(1){
         //check the rtsp connection
         if(!isStart()){
@@ -580,6 +582,7 @@ void RTSPData::run()
         // 获取RTSP中的H264数据
         if(rtsp_packet()>0){
             //解码
+            printf("%d.\n",i++);
         }else{
             sleep(8);//解码一帧耗时
         }

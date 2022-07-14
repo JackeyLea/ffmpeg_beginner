@@ -25,7 +25,7 @@
     <item row="0" column="1">
      <widget class="QLineEdit" name="lineUrl">
       <property name="text">
-       <string>/home/jackey/Videos/Sample.mkv</string>
+       <string>/home/jackey/Videos/Sample.flv</string>
       </property>
      </widget>
     </item>
@@ -37,7 +37,7 @@
      </widget>
     </item>
     <item row="2" column="0" colspan="3">
-     <widget class="I420Render2" name="openGLWidget"/>
+     <widget class="I420Render" name="openGLWidget"/>
     </item>
    </layout>
   </widget>
@@ -47,7 +47,7 @@
      <x>0</x>
      <y>0</y>
      <width>696</width>
-     <height>23</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>
@@ -56,9 +56,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>I420Render2</class>
+   <class>I420Render</class>
    <extends>QOpenGLWidget</extends>
-   <header>i420render2.h</header>
+   <header>i420render.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

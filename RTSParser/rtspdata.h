@@ -112,7 +112,8 @@ private:
     uint8_t* rtp_content; // Buffer for rtp
     int rtp_read, rtp_write;
 
-    uint8_t* packet_buffer;
+    uint8_t         *packet_buffer;
+    uint32_t        packet_wpos;
 };
 
 #endif // RTSPDATA_H

@@ -55,7 +55,7 @@ VideoItem::VideoItem(QQuickItem *parent) : QQuickFramebufferObject (parent)
     startTimer(24);
 }
 
-void VideoItem::timerEvent(QTimerEvent *event)
+void VideoItem::timerEvent(QTimerEvent *)
 {
     update();
 }

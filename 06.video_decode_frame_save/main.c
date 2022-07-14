@@ -8,6 +8,7 @@
 #include "libswresample/swresample.h"
 #include "libswscale/swscale.h"
 #include "libpostproc/postprocess.h"
+#include "libavutil/imgutils.h"
 
 //将FFmpeg解码后的数据保存到本地文件
 void saveFrame(AVFrame *pFrame, int width, int height, int iFrame)
@@ -34,7 +35,7 @@ void saveFrame(AVFrame *pFrame, int width, int height, int iFrame)
 }
 
 int main() {
-    char filePath[]       = "/home/jackey/Videos/Sample.mkv";//文件地址
+    char filePath[]       = "/home/jackey/Videos/Sample.flv";//文件地址
     int  videoStreamIndex = -1;//视频流所在流序列中的索引
     int ret=0;//默认返回值
 
@@ -43,7 +44,7 @@ int main() {
     AVPacket *pkt =NULL;
     AVCodecContext *codecCtx=NULL;
     AVCodecParameters *avCodecPara=NULL;
-    AVCodec *codec=NULL;
+    const AVCodec *codec=NULL;
     AVFrame *yuvFrame = av_frame_alloc();
     AVFrame *rgbFrame = av_frame_alloc();
 
@@ -149,7 +150,6 @@ int main() {
     //===========================释放所有指针===============================//
     av_packet_free(&pkt);
     avcodec_close(codecCtx);
-    avcodec_parameters_free(&avCodecPara);
     avformat_close_input(&fmtCtx);
     avformat_free_context(fmtCtx);
     av_frame_free(&yuvFrame);

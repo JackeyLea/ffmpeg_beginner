@@ -10,7 +10,7 @@ class VideoItem : public QQuickFramebufferObject
     Q_OBJECT
 public:
     VideoItem(QQuickItem *parent = nullptr);
-    void timerEvent(QTimerEvent *event) override;
+    void timerEvent(QTimerEvent *) override;
 
     YUVData getFrame();
     bool infoDirty() const

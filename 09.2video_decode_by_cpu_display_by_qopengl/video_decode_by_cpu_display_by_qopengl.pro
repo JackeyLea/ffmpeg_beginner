@@ -39,14 +39,12 @@ SOURCES += \
     i420render2.cpp \
         main.cpp \
         mainwindow.cpp \
-    ffmpegdecoder.cpp \
-    i420render.cpp
+    ffmpegdecoder.cpp
 
 HEADERS += \
     i420render2.h \
         mainwindow.h \
-    ffmpegdecoder.h \
-    i420render.h
+    ffmpegdecoder.h
 
 FORMS += \
         mainwindow.ui

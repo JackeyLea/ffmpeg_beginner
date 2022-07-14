@@ -8,8 +8,6 @@ FFmpegDecoder::FFmpegDecoder()
     pkt = av_packet_alloc();
     yuvFrame = av_frame_alloc();
     rgbFrame = av_frame_alloc();
-
-    frameBuffer.setCapacity(30);
 }
 
 FFmpegDecoder::~FFmpegDecoder()
@@ -85,7 +83,9 @@ void FFmpegDecoder::run()
 
     w = videoCodecCtx->width;
     h = videoCodecCtx->height;
-    emit videoInfoReady(w,h);
+
+    numBytes = av_image_get_buffer_size(AV_PIX_FMT_YUV420P,w,h,1);
+    out_buffer = (unsigned char *)av_malloc(numBytes*sizeof(uchar));
 
     while(av_read_frame(fmtCtx,pkt)>=0){
         if(pkt->stream_index == videoStreamIndex){
@@ -99,18 +99,29 @@ void FFmpegDecoder::run()
                         continue;
                     }
 
-                    m_yuvData.Y.resize(yuvFrame->linesize[0]*yuvFrame->height);
-                    m_yuvData.Y =QByteArray((char*)yuvFrame->data[0],m_yuvData.Y.size());
-                    m_yuvData.U.resize(yuvFrame->linesize[1]*yuvFrame->height/2);
-                    m_yuvData.U =QByteArray((char*)yuvFrame->data[1],m_yuvData.Y.size());
-                    m_yuvData.V.resize(yuvFrame->linesize[2]*yuvFrame->height/2);
-                    m_yuvData.V =QByteArray((char*)yuvFrame->data[2],m_yuvData.Y.size());
-                    m_yuvData.yLineSize = yuvFrame->linesize[0];
-                    m_yuvData.uLineSize = yuvFrame->linesize[1];
-                    m_yuvData.vLineSize = yuvFrame->linesize[2];
-                    m_yuvData.height = yuvFrame->height;
+                    if(isFirst){
+                        isFirst=false;
+                        emit sigFirst(out_buffer,w,h);
+                    }
 
-                    frameBuffer.append(m_yuvData);
+                    int bytes =0;
+                    for(int i=0;i<h;i++){
+                        memcpy(out_buffer+bytes,yuvFrame->data[0]+yuvFrame->linesize[0]*i,w);
+                        bytes+=w;
+                    }
+
+                    int u=h>>1;
+                    for(int i=0;i<u;i++){
+                        memcpy(out_buffer+bytes,yuvFrame->data[1]+yuvFrame->linesize[1]*i,w/2);
+                        bytes+=w/2;
+                    }
+
+                    for(int i=0;i<u;i++){
+                        memcpy(out_buffer+bytes,yuvFrame->data[2]+yuvFrame->linesize[2]*i,w/2);
+                        bytes+=w/2;
+                    }
+
+                    emit newFrame();
 
                     QThread::msleep(24);
                 }

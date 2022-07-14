@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     ///////////////get data from db////////////////////////////////
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE","test");
-    db.setDatabaseName("/home/jackey/Downloads/words.sqlite3");
+    db.setDatabaseName("/home/jackey/Music/words.db");
     if(db.open()){
         qDebug()<<QString("Connect to db %1 successfully.").arg(db.databaseName());
     }else{
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         }
 
         AVCodecParameters *aCodecPara = fmtCtx->streams[aStreamIndex]->codecpar;
-        AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
+        const AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
         if(!codec){
             qDebug("Cannot find any codec for audio.");
             return -1;
@@ -228,6 +228,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        streamOut->close();
     }while(0);
 
     av_frame_free(&frame);
@@ -235,8 +237,6 @@ int main(int argc, char *argv[])
     avcodec_close(codecCtx);
     avcodec_free_context(&codecCtx);
     avformat_free_context(fmtCtx);
-
-    //streamOut->close();
 
     return 0;
 }

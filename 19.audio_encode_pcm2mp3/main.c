@@ -9,21 +9,20 @@
 #include "libswscale/swscale.h"
 
 int flush_encoder(AVFormatContext *fmtCtx,AVCodecContext *codecCtx,int aStreamIndex){
-    int ret;
-    AVPacket enc_pkt;
-    enc_pkt.data=NULL;
-    enc_pkt.size=0;
-    av_init_packet(&enc_pkt);
+    int ret=0;
+    AVPacket *enc_pkt=av_packet_alloc();
+    enc_pkt->data=NULL;
+    enc_pkt->size=0;
 
     if (!(codecCtx->codec->capabilities & AV_CODEC_CAP_DELAY))
             return 0;
 
     printf("Flushing stream #%u encoder\n",aStreamIndex);
-    if(avcodec_send_frame(codecCtx,0)>=0){
-        while(avcodec_receive_packet(codecCtx,&enc_pkt)>=0){
+    if((ret=avcodec_send_frame(codecCtx,0))>=0){
+        while(avcodec_receive_packet(codecCtx,enc_pkt)>=0){
             printf("success encoder 1 frame.\n");
             /* mux encoded frame */
-            ret = av_write_frame(fmtCtx,&enc_pkt);
+            ret = av_write_frame(fmtCtx,enc_pkt);
             if(ret<0){
                 break;
             }
@@ -37,7 +36,7 @@ int main()
 {
     AVFormatContext *fmtCtx = NULL;
     AVCodecContext *codecCtx =NULL;
-    AVCodec *codec = NULL;
+    const AVCodec *codec = NULL;
     AVFrame *frame = NULL;
     AVPacket *pkt = NULL;
 
@@ -59,7 +58,7 @@ int main()
             printf("Cannot alloc output file context.\n");
             return -1;
         }
-        AVOutputFormat *outFmt = fmtCtx->oformat;
+        const AVOutputFormat *outFmt = fmtCtx->oformat;
 
         if(avio_open(&fmtCtx->pb,outFileName,AVIO_FLAG_READ_WRITE)<0){
             printf("Cannot open output file.\n");
@@ -189,5 +188,5 @@ int main()
     avio_close(fmtCtx->pb);
     avformat_free_context(fmtCtx);
 
-    return 0;
+    return ret;
 }

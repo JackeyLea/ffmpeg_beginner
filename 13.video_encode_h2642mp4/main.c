@@ -18,7 +18,7 @@ int main(){
     AVFormatContext *inVFmtCtx=NULL,*outFmtCtx=NULL;
     AVCodecParameters *codecPara=NULL;
     AVStream *outVStream=NULL;
-    AVCodec *outCodec=NULL;
+    const AVCodec *outCodec=NULL;
     AVCodecContext *outCodecCtx=NULL;
     AVCodecParameters *outCodecPara=NULL;
     AVStream *inVStream=NULL;
@@ -153,14 +153,9 @@ int main(){
 
     //=================释放所有指针=======================
     av_packet_free(&pkt);
-    av_free(inVStream);
-    av_free(outVStream);
     avformat_close_input(&outFmtCtx);
     avcodec_close(outCodecCtx);
     avcodec_free_context(&outCodecCtx);
-    av_free(outCodec);
-    avcodec_parameters_free(&outCodecPara);
-    avcodec_parameters_free(&codecPara);
     avformat_close_input(&inVFmtCtx);
     avformat_free_context(inVFmtCtx);
     avio_close(outFmtCtx->pb);

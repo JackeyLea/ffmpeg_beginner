@@ -22,7 +22,7 @@ Window {
         text: qsTr("Play")
 
         onClicked: {
-            videoitem.setUrl("/home/jackey/Videos/Sample.mkv")
+            videoitem.setUrl("/home/jackey/Videos/Sample.flv")
             videoitem.start()
         }
     }

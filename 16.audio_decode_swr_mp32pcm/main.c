@@ -52,7 +52,7 @@ int main()
         }
 
         AVCodecParameters *aCodecPara = fmtCtx->streams[aStreamIndex]->codecpar;
-        AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
+        const AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
         if(!codec){
             printf("Cannot find any codec for audio.\n");
             break;

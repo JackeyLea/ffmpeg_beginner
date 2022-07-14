@@ -72,7 +72,7 @@ int main()
     int videoIndex = -1, audioIndex = -1;
     int ret = 0;
 
-    char inFilename[128] = "/home/jackey/Videos/test.mkv";
+    char inFilename[128] = "/home/jackey/Videos/Sample.flv";
     char outFilenameAudio[128] = "output.aac";
     char outFilenameVideo[128] = "output.h264";
 

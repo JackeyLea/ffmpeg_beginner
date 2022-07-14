@@ -5,6 +5,7 @@ extern "C"
 #include "libavformat/avformat.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/time.h"
+#include "libavdevice/avdevice.h"
 }
 
 int main()
@@ -15,24 +16,27 @@ int main()
 
     int ret = 0;
 
+    avdevice_register_all();
+
     do{
         unsigned int i = 0;
         int videoIndex = -1;
         int frameIndex = 0;
         int64_t startTime = 0;
 
-        const char *inFilename = "/home/jackey/Videos/test.mp4"; //输入URL
-        const char *outFilename = "rtsp://localhost/test";       //输出URL
+        const char *inFilename = "/home/jackey/Videos/Sample.flv"; //输入URL
+        const char *outFilename = "rtsp://192.168.1.31/test";       //输出URL
         const char *ofmtName = "rtsp";//输出格式;
 
         AVDictionary *dict = NULL;
         av_dict_set(&dict, "rtsp_transport", "tcp", 0);
         av_dict_set(&dict, "vcodec", "h264", 0);
-        av_dict_set(&dict, "f", "rtsp", 0);
+        //av_dict_set(&dict, "f", "rtsp", 0);
 
         // 1. 打开输入
         // 1.1 打开输入文件，获取封装格式相关信息
-        if ((ret = avformat_open_input(&ifmtCtx, inFilename, 0, &dict)) < 0)
+        ifmtCtx = avformat_alloc_context();
+        if ((ret = avformat_open_input(&ifmtCtx, inFilename, NULL, &dict)) < 0)
         {
             printf("can't open input file: %s\n", inFilename);
             break;

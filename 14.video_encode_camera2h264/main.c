@@ -14,29 +14,30 @@
 
 int flush_encoder(AVFormatContext *fmtCtx, AVCodecContext *codecCtx, int vStreamIndex){
     int      ret=0;
-    AVPacket enc_pkt;
-    enc_pkt.data = NULL;
-    enc_pkt.size = 0;
-    av_init_packet(&enc_pkt);
+    AVPacket *enc_pkt=av_packet_alloc();
+    enc_pkt->data = NULL;
+    enc_pkt->size = 0;
 
     if (!(codecCtx->codec->capabilities & AV_CODEC_CAP_DELAY))
         return 0;
 
     printf("Flushing stream #%u encoder\n",vStreamIndex);
     if(avcodec_send_frame(codecCtx,0)>=0){
-        while(avcodec_receive_packet(codecCtx,&enc_pkt)>=0){
+        while(avcodec_receive_packet(codecCtx,enc_pkt)>=0){
             printf("success encoder 1 frame.\n");
 
             // parpare packet for muxing
-            enc_pkt.stream_index = vStreamIndex;
-            av_packet_rescale_ts(&enc_pkt,codecCtx->time_base,
+            enc_pkt->stream_index = vStreamIndex;
+            av_packet_rescale_ts(enc_pkt,codecCtx->time_base,
                                  fmtCtx->streams[ vStreamIndex ]->time_base);
-            ret = av_interleaved_write_frame(fmtCtx, &enc_pkt);
+            ret = av_interleaved_write_frame(fmtCtx, enc_pkt);
             if(ret<0){
                 break;
             }
         }
     }
+
+    av_packet_unref(enc_pkt);
 
     return ret;
 }
@@ -48,16 +49,16 @@ int main()
 
     AVFormatContext *inFmtCtx = avformat_alloc_context();
     AVCodecContext  *inCodecCtx = NULL;
-    AVCodec         *inCodec =NULL;
+    const AVCodec         *inCodec =NULL;
     AVPacket        *inPkt =av_packet_alloc();
     AVFrame         *srcFrame =av_frame_alloc();
     AVFrame         *yuvFrame =av_frame_alloc();
 
     //打开输出文件，并填充fmtCtx数据
     AVFormatContext *outFmtCtx = avformat_alloc_context();
-    AVOutputFormat *outFmt = NULL;
+    const AVOutputFormat *outFmt = NULL;
     AVCodecContext *outCodecCtx=NULL;
-    AVCodec        *outCodec = NULL;
+    const AVCodec        *outCodec = NULL;
     AVStream *outVStream     = NULL;
 
     AVPacket *outPkt = av_packet_alloc();
@@ -69,7 +70,7 @@ int main()
     do{
         /////////////解码器部分//////////////////////
         //打开摄像头
-        AVInputFormat *inFmt = av_find_input_format("v4l2");
+        const AVInputFormat *inFmt = av_find_input_format("v4l2");
         if(avformat_open_input(&inFmtCtx,"/dev/video0",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
             return -1;

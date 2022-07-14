@@ -40,7 +40,7 @@ Window {
             y: 363
             width: 507
             height: 40
-            text: qsTr("rtsp://192.168.1.217/stream0")
+            text: qsTr("/home/jackey/Videos/Sample.flv")
         }
 
         Button {
@@ -103,8 +103,3 @@ Window {
         }
     }
 }
-
-/*##^## Designer {
-    D{i:7;anchors_height:31;anchors_width:51;anchors_x:24;anchors_y:372}
-}
- ##^##*/

@@ -25,7 +25,6 @@ void FFmpegVideo::ffmpeg_init_variables()
     avformat_network_init();
     fmtCtx = avformat_alloc_context();
     pkt = av_packet_alloc();
-    av_init_packet(pkt);
     yuvFrame = av_frame_alloc();
     rgbFrame = av_frame_alloc();
     nv12Frame = av_frame_alloc();
@@ -139,6 +138,7 @@ int FFmpegVideo::open_input_file()
 
 AVPixelFormat FFmpegVideo::get_hw_format(AVCodecContext *ctx, const AVPixelFormat *pix_fmts)
 {
+    Q_UNUSED(ctx)
     const enum AVPixelFormat *p;
 
     for (p = pix_fmts; *p != -1; p++) {
@@ -169,8 +169,6 @@ void FFmpegVideo::stopThread()
     stopFlag=true;
 }
 
-static FILE *output_file=NULL;
-
 void FFmpegVideo::run()
 {
     if(!openFlag){
@@ -191,7 +189,7 @@ void FFmpegVideo::run()
                     }
 
                     if(yuvFrame->format==videoCodecCtx->pix_fmt){
-                        if(ret = av_hwframe_transfer_data(nv12Frame,yuvFrame,0)<0){
+                        if((ret = av_hwframe_transfer_data(nv12Frame,yuvFrame,0))<0){
                             continue;
                         }
                     }

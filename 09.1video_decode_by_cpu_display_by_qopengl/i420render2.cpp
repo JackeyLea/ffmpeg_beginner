@@ -43,7 +43,7 @@ void I420Render2::initializeGL()
              }";
 
     const char *fsrc =
-            "varying mediump vec4 textureOut;\n"
+            "varying vec4 textureOut;\n"
             "uniform sampler2D textureY;\n"
             "uniform sampler2D textureU;\n"
             "uniform sampler2D textureV;\n"
@@ -98,7 +98,7 @@ void I420Render2::paintGL()
 {
     if(!ptr) return;
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 

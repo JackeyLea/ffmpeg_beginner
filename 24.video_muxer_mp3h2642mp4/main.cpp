@@ -35,7 +35,7 @@ FIX:AAC in some container format (FLV, MP4, MKV etc.) need
 #define USE_AACBSF 0
 
 
-int main(int argc, char *argv[])
+int main()
 {
     AVFormatContext *ifmtCtxVideo = NULL, *ifmtCtxAudio = NULL, *ofmtCtx = NULL;
     AVPacket packet;

@@ -13,7 +13,7 @@ int main(){
 
     int frame_index=0;//统计帧数
     int inVStreamIndex=-1,outVStreamIndex=-1;//输入输出视频流在文件中的索引位置
-    const char *inVFileName = "rtsp://192.168.1.103/test";
+    const char *inVFileName = "rtsp://192.168.1.31/test";
     const char *outFileName = "result.mp4";
 
     //======================输入部分============================//
@@ -69,7 +69,7 @@ int main(){
     outVStreamIndex=outVStream->index;
 
     //查找编码器
-    AVCodec *outCodec = avcodec_find_encoder(codecPara->codec_id);
+    const AVCodec *outCodec = avcodec_find_encoder(codecPara->codec_id);
     if(outCodec==NULL){
         printf("Cannot find any encoder.\n");
         return -1;
@@ -154,7 +154,6 @@ int main(){
     avformat_close_input(&outFmtCtx);
     avcodec_close(outCodecCtx);
     avcodec_free_context(&outCodecCtx);
-    av_free(outCodec);
     avcodec_parameters_free(&outCodecPara);
     avcodec_parameters_free(&codecPara);
     avformat_close_input(&inVFmtCtx);

@@ -26,6 +26,7 @@ void FFmpegDecoder::setUrl(QString url)
 
 AVPixelFormat FFmpegDecoder::get_hw_format(AVCodecContext *ctx, const AVPixelFormat *pix_fmts)
 {
+    Q_UNUSED(ctx)
     const enum AVPixelFormat *p;
 
     for (p = pix_fmts; *p != -1; p++) {
@@ -54,7 +55,7 @@ int FFmpegDecoder::hw_decoder_init(AVCodecContext *ctx, const AVHWDeviceType typ
 void FFmpegDecoder::run()
 {
     AVFormatContext *fmtCtx       =NULL;
-    AVCodec         *videoCodec   =NULL;
+    const AVCodec         *videoCodec   =NULL;
     AVCodecContext  *videoCodecCtx=NULL;
     AVPacket        *pkt          = NULL;
     AVFrame         *yuvFrame     = NULL;
@@ -67,7 +68,6 @@ void FFmpegDecoder::run()
     avformat_network_init();
     fmtCtx = avformat_alloc_context();
     pkt = av_packet_alloc();
-    av_init_packet(pkt);
     yuvFrame = av_frame_alloc();
     rgbFrame = av_frame_alloc();
     nv12Frame = av_frame_alloc();

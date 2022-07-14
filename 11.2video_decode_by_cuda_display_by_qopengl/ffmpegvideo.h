@@ -56,7 +56,7 @@ signals:
 
 private:
     AVFormatContext *fmtCtx       =NULL;
-    AVCodec         *videoCodec   =NULL;
+    const AVCodec         *videoCodec   =NULL;
     AVCodecContext  *videoCodecCtx=NULL;
     AVPacket        *pkt          = NULL;
     AVFrame         *yuvFrame     = NULL;

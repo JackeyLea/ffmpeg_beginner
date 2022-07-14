@@ -38,10 +38,10 @@ int flush_encoder(AVFormatContext *fmtCtx, AVCodecContext *codecCtx,int vStreamI
 int main()
 {
     AVFormatContext *fmtCtx = NULL;
-    AVOutputFormat *outFmt = NULL;
+    const AVOutputFormat *outFmt = NULL;
     AVStream *vStream = NULL;
     AVCodecContext *codecCtx = NULL;
-    AVCodec *codec = NULL;
+    const AVCodec *codec = NULL;
     AVPacket *pkt=av_packet_alloc(); //创建已编码帧
 
     uint8_t *picture_buf = NULL;
@@ -50,7 +50,7 @@ int main()
     int ret = -1;
 
     //[1]!打开视频文件
-    FILE *in_file = fopen("akiyo_cif.yuv", "rb");
+    FILE *in_file = fopen("result.yuv", "rb");
     if (!in_file) {
         printf("can not open file!\n");
         return -1;
@@ -59,7 +59,7 @@ int main()
 
     do{
         //[2]!打开输出文件，并填充fmtCtx数据
-        int in_w = 352,in_h=288,frameCnt=300;
+        int in_w = 1280,in_h=720,frameCnt=4970;
         const char *outFile = "result.h264";
         if(avformat_alloc_output_context2(&fmtCtx,NULL,NULL,outFile)<0){
             printf("Cannot alloc output file context.\n");
