@@ -96,22 +96,6 @@ Qt简单视频播放器，带音视频同步
 
 将h264和mp3合并为mp4
 
-### 26.video_push_local2cloud
-
-将本地视频使用rtsp推流
-
-### 27.video_push_encoded_camera_2cloud
-
-在14的基础上推流
-
-### 28.video_dump_stream_to_local_file
-
-使用ffmpeg收取rtsp流，并将其保存为h264文件
-
-### 29.video_merge_yuv
-
-在27的基础上，将采集的一路视频流，复制为四路一样的视频流，并合成为一路视频流，然后推流
-
 ### RTSParser
 
 收RTSP流，并解析流中的H264数据
