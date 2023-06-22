@@ -20,29 +20,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-# 包含FFmpeg库文件位置
-
-# windows平台
-win32{
-INCLUDEPATH += C:\\ffmpeg\\include
-LIBS += -LC:/ffmpeg/lib \
-        -lavcodec \
-        -lavdevice \
-        -lavformat \
-        -lavutil   \
-        -lpostproc \
-        -lswresample \
-        -lswscale
-}
-
-# linux平台
-unix{
-    INCLUDEPATH+= .
-    LIBS += -L/usr/lib/x86_64-linux-gnu/ \
-            -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lpostproc \
-            -lswresample -lswscale
-}
-
+include(../ffmpeg.pri)
 
 SOURCES += \
     ffmpegwidget.cpp \
