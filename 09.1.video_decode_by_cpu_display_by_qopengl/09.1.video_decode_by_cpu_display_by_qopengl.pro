@@ -23,6 +23,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 include(../ffmpeg.pri)
 
+DESTDIR     = ../bin
+TARGET      = decode_qopengl
+OBJECTS_DIR = obj
+MOC_DIR     = moc
+RCC_DIR     = rcc
+UI_DIR      = ui
+
 SOURCES += \
         main.cpp \
         mainwindow.cpp \

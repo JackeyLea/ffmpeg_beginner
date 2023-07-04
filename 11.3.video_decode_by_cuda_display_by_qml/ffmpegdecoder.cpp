@@ -96,7 +96,7 @@ void FFmpegDecoder::run()
     }
 
     /* find the video stream information */
-    ret = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &videoCodec, 0);
+    ret = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, (AVCodec**)&videoCodec, 0);
     if (ret < 0) {
         fprintf(stderr, "Cannot find a video stream in the input file\n");
         return;

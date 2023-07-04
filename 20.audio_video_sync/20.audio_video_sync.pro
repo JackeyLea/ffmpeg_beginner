@@ -2,12 +2,7 @@ QT       += core gui multimedia testlib
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
-DESTDIR_TARGET = bin
-OBJECTS_DIR = tmp/obj
-MOC_DIR = tmp/moc
-RCC_DIR = tmp/rcc
-UI_DIR = tmp/ui
+CONFIG += c++17
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -22,6 +17,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 include(../ffmpeg.pri)
 
+DESTDIR     = ../bin
+TARGET      = sync
+OBJECTS_DIR = obj
+MOC_DIR     = moc
+RCC_DIR     = rcc
+UI_DIR      = ui
+
 SOURCES += \
     ffmpegwidget.cpp \
     main.cpp \
@@ -33,8 +35,3 @@ HEADERS += \
 
 FORMS += \
     mainwindow.ui
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target

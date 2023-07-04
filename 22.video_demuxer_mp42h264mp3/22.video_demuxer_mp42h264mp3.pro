@@ -1,9 +1,16 @@
 TEMPLATE = app
-CONFIG += console c++11
+CONFIG += console c++17
 CONFIG -= app_bundle
 CONFIG -= qt
 
 include(../ffmpeg.pri)
+
+DESTDIR     = ../bin
+TARGET      = demuxer_mp42h264mp3
+OBJECTS_DIR = obj
+MOC_DIR     = moc
+RCC_DIR     = rcc
+UI_DIR      = ui
 
 SOURCES += \
     main.cpp

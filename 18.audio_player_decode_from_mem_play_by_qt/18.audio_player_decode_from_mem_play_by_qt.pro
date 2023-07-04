@@ -1,7 +1,7 @@
 QT -= gui
 QT += sql multimedia
 
-CONFIG += c++11 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -10,10 +10,12 @@ CONFIG -= app_bundle
 
 include(../ffmpeg.pri)
 
+DESTDIR     = ../bin
+TARGET      = decode_from_mem
+OBJECTS_DIR = obj
+MOC_DIR     = moc
+RCC_DIR     = rcc
+UI_DIR      = ui
+
 SOURCES += \
         main.cpp
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
