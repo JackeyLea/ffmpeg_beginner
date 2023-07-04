@@ -54,3 +54,4 @@ compile_commands.json
 
 temp
 .qmake.stash
+lib
