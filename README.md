@@ -1,8 +1,14 @@
 # ffmpeg_beginner
 
-<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg5入门系列教程索引</a>ffmpeg5入门系列教程代码
+<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg4/5/6入门系列教程</a>代码
 
-## 源码
+## 编译说明
+
+- 使用<a href="https://github.com/FFmpeg/FFmpeg" target="_blank">FFmpeg</a>tags中4/5/6版本最新版本号源码编译测试
+- 最近忙着驻场，没有太多时间维护代码，所以使用条件编译的方式适配各个版本，不会有各个版本的独立分支
+- 尽量保证编译结果没有错误、没有警告、没有deprecated方法调用
+
+## 源码说明
 
 ### 3.get_lib_version
 
@@ -99,3 +105,7 @@ Qt简单视频播放器，带音视频同步
 ### RTSParser
 
 收RTSP流，并解析流中的H264数据
+
+### 待添加
+
+本系列的目的就是将雷霄华同志的教程进行新版本适配，其在CSDN发布的所有文章涉及的代码都会进行适配
