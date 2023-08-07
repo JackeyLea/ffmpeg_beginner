@@ -4,9 +4,22 @@
 
 ## 编译说明
 
-- 使用<a href="https://github.com/FFmpeg/FFmpeg" target="_blank">FFmpeg</a>tags中4/5/6版本最新版本号源码编译测试
-- 最近忙着驻场，没有太多时间维护代码，所以使用条件编译的方式适配各个版本，不会有各个版本的独立分支
+- 使用<a href="https://github.com/FFmpeg/FFmpeg" target="_blank">FFmpeg</a>tags中4.4.4源码编译测试
 - 尽量保证编译结果没有错误、没有警告、没有deprecated方法调用
+
+## 编译参数
+
+```bash
+./configure --prefix=./result --toolchain=hardened --arch=amd64 --enable-gpl --disable-stripping --enable-gnutls \
+    --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcodec2 \
+    --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme \
+    --enable-libgsm --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus \
+    --enable-libpulse --enable-librabbitmq --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr \
+    --enable-libspeex --enable-libsrt --enable-libssh --enable-libtheora --enable-libtwolame --enable-libvidstab \
+    --enable-libvorbis --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg \
+    --enable-libzmq --enable-libzvbi --enable-lv2 --enable-openal --enable-opencl --enable-opengl --enable-libdrm \
+    --enable-libx264 --enable-shared --disable-static
+```
 
 ## 源码说明
 
