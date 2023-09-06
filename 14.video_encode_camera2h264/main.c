@@ -1,4 +1,9 @@
+#ifdef _WIN32
+#include <Windows.h>
+#elif __linux__
 #include <unistd.h>
+#endif
+
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
 #include <libavutil/channel_layout.h>
@@ -70,7 +75,7 @@ int main()
     do{
         /////////////解码器部分//////////////////////
         //打开摄像头
-        const AVInputFormat *inFmt = av_find_input_format("v4l2");
+        AVInputFormat *inFmt = av_find_input_format("v4l2");
         if(avformat_open_input(&inFmtCtx,"/dev/video0",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
             return -1;
@@ -81,7 +86,7 @@ int main()
             return -1;
         }
 
-        for(size_t i=0;i<inFmtCtx->nb_streams;i++){
+        for(uint32_t i=0;i<inFmtCtx->nb_streams;i++){
             if(inFmtCtx->streams[i]->codecpar->codec_type==AVMEDIA_TYPE_VIDEO){
                 inVideoStreamIndex=i;
                 break;
@@ -249,7 +254,11 @@ int main()
                                 av_packet_unref(outPkt);
                             }
                         }
-                        usleep(1000*24);
+#ifdef _WIN32
+Sleep(1000*24);
+#elif __linux__
+usleep(1000*24);
+#endif
                     }
                 }
                 av_packet_unref(inPkt);
