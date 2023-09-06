@@ -11,7 +11,7 @@ CONFIG += c++17
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = filter
+TARGET      = 21_filter
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

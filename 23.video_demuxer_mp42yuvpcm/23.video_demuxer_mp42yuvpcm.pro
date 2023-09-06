@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = demuxer_mp42yuvpcm
+TARGET      = 23_demuxer_mp42yuvpcm
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

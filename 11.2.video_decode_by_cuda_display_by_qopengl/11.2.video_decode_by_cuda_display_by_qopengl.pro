@@ -11,7 +11,7 @@ CONFIG += c++17
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = decode_by_cuda_qopengl
+TARGET      = 11_2_decode_by_cuda_qopengl
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

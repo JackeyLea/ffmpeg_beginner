@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = muxer_mp3h2642mp4
+TARGET      = 24_muxer_mp3h2642mp4
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

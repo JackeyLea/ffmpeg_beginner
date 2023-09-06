@@ -11,7 +11,7 @@ CONFIG -= app_bundle
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = decode_from_mem
+TARGET      = 18_decode_from_mem
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

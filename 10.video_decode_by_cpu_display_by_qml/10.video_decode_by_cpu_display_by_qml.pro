@@ -15,7 +15,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = decode_qml
+TARGET      = 10_decode_qml
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

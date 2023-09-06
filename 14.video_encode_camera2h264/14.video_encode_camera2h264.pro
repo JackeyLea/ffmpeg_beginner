@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = camera2h264
+TARGET      = 14_camera2h264
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

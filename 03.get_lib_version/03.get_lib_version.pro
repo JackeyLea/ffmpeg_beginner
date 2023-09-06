@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = version
+TARGET      = 3_version
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

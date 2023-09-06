@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = encode_pcm2mp3
+TARGET      = 19_encode_pcm2mp3
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

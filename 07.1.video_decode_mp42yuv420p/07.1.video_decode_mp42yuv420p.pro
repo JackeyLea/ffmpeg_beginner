@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = decode_mp42yuv420p
+TARGET      = 7_1_decode_mp42yuv420p
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc

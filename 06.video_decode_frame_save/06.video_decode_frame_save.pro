@@ -6,7 +6,7 @@ CONFIG -= qt
 include(../ffmpeg.pri)
 
 DESTDIR     = ../bin
-TARGET      = save_decoded_frame
+TARGET      = 6_save_decoded_frame
 OBJECTS_DIR = obj
 MOC_DIR     = moc
 RCC_DIR     = rcc
