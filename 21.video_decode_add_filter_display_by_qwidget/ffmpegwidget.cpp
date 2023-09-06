@@ -37,18 +37,18 @@ void FFmpegVideo::setUrl(QString url)
     _url =url;
 }
 
-int FFmpegVideo::open_input_file()
+bool FFmpegVideo::open_input_file()
 {
     init_variables();//初始化变量
 
     if(avformat_open_input(&fmtCtx,_url.toLocal8Bit().data(),NULL,NULL)<0){
         printf("Cannot open input file.\n");
-        return -1;
+        return 0;
     }
 
     if(avformat_find_stream_info(fmtCtx,NULL)<0){
         printf("Cannot find any stream in file.\n");
-        return -1;
+        return 0;
     }
 
     int streamCnt=fmtCtx->nb_streams;
@@ -61,7 +61,7 @@ int FFmpegVideo::open_input_file()
 
     if(videoStreamIndex==-1){
         printf("Cannot find video stream in file.\n");
-        return -1;
+        return 0;
     }
 
     av_dump_format(fmtCtx,videoStreamIndex,_url.toLocal8Bit().data(),0);
@@ -70,21 +70,21 @@ int FFmpegVideo::open_input_file()
 
     if(!(videoCodec = avcodec_find_decoder(videoCodecPara->codec_id))){
         printf("Cannot find valid decode codec.\n");
-        return -1;
+        return 0;
     }
 
     if(!(videoCodecCtx = avcodec_alloc_context3(videoCodec))){
         printf("Cannot find valid decode codec context.\n");
-        return -1;
+        return 0;
     }
 
     if(avcodec_parameters_to_context(videoCodecCtx,videoCodecPara)<0){
         printf("Cannot initialize parameters.\n");
-        return -1;
+        return 0;
     }
     if(avcodec_open2(videoCodecCtx,videoCodec,NULL)<0){
         printf("Cannot open codec.\n");
-        return -1;
+        return 0;
     }
     videoWidth = videoCodecCtx->width;
     videoHeight = videoCodecCtx->height;
@@ -106,15 +106,19 @@ int FFmpegVideo::open_input_file()
                 videoCodecCtx->width,videoCodecCtx->height,1);
     if(res<0){
         qDebug()<<"Fill arrays failed.";
-        return -1;
+        return 0;
     }
 
-    initFilter();//初始化滤镜
+    //初始化滤镜
+    if(!initFilter()){
+        qDebug()<<"Cannot init filter.";
+        return 0;
+    }
 
     return true;
 }
 
-void FFmpegVideo::initFilter()
+bool FFmpegVideo::initFilter()
 {
     /*
      * 开始初始化滤波器
@@ -148,6 +152,7 @@ void FFmpegVideo::initFilter()
                                            filterGraph);
     if(ret<0){
         printf("Cannot create buffer source.\n");
+        return 0;
     }
 
     /* buffer video sink: to terminate the filter chain. */
@@ -159,12 +164,14 @@ void FFmpegVideo::initFilter()
                                        filterGraph);
     if(ret<0){
         printf("Cannot creat buffer sink.\n");
+        return 0;
     }
 
     ret = av_opt_set_int_list(bufSinkCtx, "pix_fmts", pixel_fmts,
                               AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n");
+        return 0;
     }
 
     /* Endpoints for the filter graph. */
@@ -188,12 +195,16 @@ void FFmpegVideo::initFilter()
                                    NULL);
     if(ret<0){
         printf("Cannot parse filter desc.\n");
+        return 0;
     }
 
     //检查当前所构造的FilterGraph的完整性与可用性
     if(avfilter_graph_config(filterGraph,NULL)<0){
         printf("Check config failed.\n");
+        return 0;
     }
+
+    return true;
 }
 
 void FFmpegVideo::setCL(int c, int l)

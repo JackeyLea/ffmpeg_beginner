@@ -43,7 +43,7 @@ void FFmpegAudio::setUrl(QString url)
     _url = url;
 }
 
-int FFmpegAudio::open_input_file()
+bool FFmpegAudio::open_input_file()
 {
     if(_url.isEmpty()) return 0;
 
@@ -197,18 +197,18 @@ void FFmpegVideo::setUrl(QString url)
     _url = url;
 }
 
-int FFmpegVideo::open_input_file()
+bool FFmpegVideo::open_input_file()
 {
-    if(_url.isEmpty()) return -1;
+    if(_url.isEmpty()) return 0;
 
     if(avformat_open_input(&fmtCtx,_url.toLocal8Bit().data(),NULL,NULL)<0){
         printf("Cannot open input file.\n");
-        return -1;
+        return 0;
     }
 
     if(avformat_find_stream_info(fmtCtx,NULL)<0){
         printf("Cannot find any stream in file.\n");
-        return -1;
+        return 0;
     }
 
     int streamCnt=fmtCtx->nb_streams;
@@ -221,7 +221,7 @@ int FFmpegVideo::open_input_file()
 
     if(videoStreamIndex==-1){
         printf("Cannot find any stream in file.\n");
-        return -1;
+        return 0;
     }
 
     //////////////////////视频部分开始/////////////////////////////
@@ -229,21 +229,21 @@ int FFmpegVideo::open_input_file()
 
     if(!(videoCodec = avcodec_find_decoder(videoCodecPara->codec_id))){
         printf("Cannot find valid decode codec.\n");
-        return -1;
+        return 0;
     }
 
     if(!(videoCodecCtx = avcodec_alloc_context3(videoCodec))){
         printf("Cannot find valid decode codec context.\n");
-        return -1;
+        return 0;
     }
 
     if(avcodec_parameters_to_context(videoCodecCtx,videoCodecPara)<0){
         printf("Cannot initialize parameters.\n");
-        return -1;
+        return 0;
     }
     if(avcodec_open2(videoCodecCtx,videoCodec,NULL)<0){
         printf("Cannot open codec.\n");
-        return -1;
+        return 0;
     }
     img_ctx = sws_getContext(videoCodecCtx->width,
                              videoCodecCtx->height,
@@ -262,7 +262,7 @@ int FFmpegVideo::open_input_file()
                 videoCodecCtx->width,videoCodecCtx->height,1);
     if(res<0){
         qDebug()<<"Fill arrays failed.";
-        return -1;
+        return 0;
     }
     ///////////////////////////视频部分结束//////////////////////////////////
 

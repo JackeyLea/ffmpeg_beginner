@@ -79,19 +79,19 @@ int main()
         AVInputFormat *inFmt = av_find_input_format("dshow");
         if(avformat_open_input(&inFmtCtx,"video=Logi C270 HD WebCam",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
-            return -1;
+            break;
         }
 #elif __linux__
         AVInputFormat *inFmt = av_find_input_format("v4l2");
         if(avformat_open_input(&inFmtCtx,"/dev/video0",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
-            return -1;
+            break;
         }
 #endif
 
         if(avformat_find_stream_info(inFmtCtx,NULL)<0){
             printf("Cannot find any stream in file.\n");
-            return -1;
+            break;
         }
 
         for(uint32_t i=0;i<inFmtCtx->nb_streams;i++){
@@ -102,26 +102,26 @@ int main()
         }
         if(inVideoStreamIndex==-1){
             printf("Cannot find video stream in file.\n");
-            return -1;
+            break;
         }
 
         AVCodecParameters *inVideoCodecPara = inFmtCtx->streams[inVideoStreamIndex]->codecpar;
         if(!(inCodec=avcodec_find_decoder(inVideoCodecPara->codec_id))){
             printf("Cannot find valid video decoder.\n");
-            return -1;
+            break;
         }
         if(!(inCodecCtx = avcodec_alloc_context3(inCodec))){
             printf("Cannot alloc valid decode codec context.\n");
-            return -1;
+            break;
         }
         if(avcodec_parameters_to_context(inCodecCtx,inVideoCodecPara)<0){
             printf("Cannot initialize parameters.\n");
-            return -1;
+            break;
         }
 
         if(avcodec_open2(inCodecCtx,inCodec,NULL)<0){
             printf("Cannot open codec.\n");
-            return -1;
+            break;
         }
 
         img_ctx = sws_getContext(inCodecCtx->width,
@@ -147,7 +147,7 @@ int main()
                                    1);
         if(ret<0){
             printf("Fill arrays failed.\n");
-            return -1;
+            break;
         }
         //////////////解码器部分结束/////////////////////
 
@@ -156,21 +156,21 @@ int main()
 
         if(avformat_alloc_output_context2(&outFmtCtx,NULL,NULL,outFile)<0){
             printf("Cannot alloc output file context.\n");
-            return -1;
+            break;
         }
         outFmt = outFmtCtx->oformat;
 
         //打开输出文件
         if(avio_open(&outFmtCtx->pb,outFile,AVIO_FLAG_READ_WRITE)<0){
             printf("output file open failed.\n");
-            return -1;
+            break;
         }
 
         //创建h264视频流，并设置参数
         outVStream = avformat_new_stream(outFmtCtx,outCodec);
         if(outVStream==NULL){
             printf("create new video stream fialed.\n");
-            return -1;
+            break;
         }
         outVStream->time_base.den=60;
         outVStream->time_base.num=1;
@@ -187,7 +187,7 @@ int main()
         outCodec = avcodec_find_encoder(outFmt->video_codec);
         if(outCodec==NULL){
             printf("Cannot find any encoder.\n");
-            return -1;
+            break;
         }
 
         //设置编码器内容
@@ -195,7 +195,7 @@ int main()
         avcodec_parameters_to_context(outCodecCtx,outCodecPara);
         if(outCodecCtx==NULL){
             printf("Cannot alloc output codec content.\n");
-            return -1;
+            break;
         }
         outCodecCtx->codec_id = outFmt->video_codec;
         outCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -220,7 +220,7 @@ int main()
         //打开编码器
         if(avcodec_open2(outCodecCtx,outCodec,NULL)<0){
             printf("Open encoder failed.\n");
-            return -1;
+            break;
         }
         ///////////////编码器部分结束////////////////////
 
@@ -277,7 +277,7 @@ usleep(1000*24);
         ret = flush_encoder(outFmtCtx,outCodecCtx,outVStream->index);
         if(ret<0){
             printf("flushing encoder failed.\n");
-            return -1;
+            break;
         }
 
         av_write_trailer(outFmtCtx);

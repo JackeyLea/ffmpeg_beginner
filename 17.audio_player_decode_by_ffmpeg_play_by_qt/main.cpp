@@ -58,11 +58,11 @@ int main()
     do{
         if(avformat_open_input(&fmtCtx,_url.toLocal8Bit().data(),NULL,NULL)<0){
             qDebug("Cannot open input file.");
-            return -1;
+            break;
         }
         if(avformat_find_stream_info(fmtCtx,NULL)<0){
             qDebug("Cannot find any stream in file.");
-            return -1;
+            break;
         }
 
         av_dump_format(fmtCtx,0,_url.toLocal8Bit().data(),0);
@@ -75,25 +75,25 @@ int main()
         }
         if(aStreamIndex==-1){
             qDebug("Cannot find audio stream.");
-            return -1;
+            break;
         }
 
         AVCodecParameters *aCodecPara = fmtCtx->streams[aStreamIndex]->codecpar;
         const AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
         if(!codec){
             qDebug("Cannot find any codec for audio.");
-            return -1;
+            break;
         }
         codecCtx = avcodec_alloc_context3(codec);
         if(avcodec_parameters_to_context(codecCtx,aCodecPara)<0){
             qDebug("Cannot alloc codec context.");
-            return -1;
+            break;
         }
         codecCtx->pkt_timebase = fmtCtx->streams[aStreamIndex]->time_base;
 
         if(avcodec_open2(codecCtx,codec,NULL)<0){
             qDebug("Cannot open audio codec.");
-            return -1;
+            break;
         }
 
         //设置转码参数

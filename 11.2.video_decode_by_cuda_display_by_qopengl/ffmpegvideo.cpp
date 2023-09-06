@@ -43,7 +43,7 @@ void FFmpegVideo::ffmpeg_free_variables()
     if(!fmtCtx) avformat_close_input(&fmtCtx);
 }
 
-int FFmpegVideo::open_input_file()
+bool FFmpegVideo::open_input_file()
 {
     if(!initFlag){
         ffmpeg_init_variables();
@@ -60,24 +60,24 @@ int FFmpegVideo::open_input_file()
         while((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
             fprintf(stderr, " %s", av_hwdevice_get_type_name(type));
         fprintf(stderr, "\n");
-        return -1;
+        return 0;
     }
 
     /* open the input file */
     if (avformat_open_input(&fmtCtx, _filePath.toLocal8Bit().data(), NULL, NULL) != 0) {
-        return -1;
+        return 0;
     }
 
     if (avformat_find_stream_info(fmtCtx, NULL) < 0) {
         fprintf(stderr, "Cannot find input stream information.\n");
-        return -1;
+        return 0;
     }
 
     /* find the video stream information */
     ret = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, (AVCodec**)&videoCodec, 0);
     if (ret < 0) {
         fprintf(stderr, "Cannot find a video stream in the input file\n");
-        return -1;
+        return 0;
     }
     videoStreamIndex = ret;
 
@@ -86,7 +86,7 @@ int FFmpegVideo::open_input_file()
         if (!config) {
             fprintf(stderr, "Decoder %s does not support device type %s.\n",
                     videoCodec->name, av_hwdevice_get_type_name(type));
-            return -1;
+            return 0;
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX &&
                 config->device_type == type) {
@@ -96,20 +96,20 @@ int FFmpegVideo::open_input_file()
     }
 
     if (!(videoCodecCtx = avcodec_alloc_context3(videoCodec)))
-        return AVERROR(ENOMEM);
+        return 0;//return AVERROR(ENOMEM);
 
     videoStream = fmtCtx->streams[videoStreamIndex];
     if (avcodec_parameters_to_context(videoCodecCtx, videoStream->codecpar) < 0)
-        return -1;
+        return 0;
 
     videoCodecCtx->get_format  = get_hw_format;
 
     if (hw_decoder_init(videoCodecCtx, type) < 0)
-        return -1;
+        return 0;
 
     if ((ret = avcodec_open2(videoCodecCtx, videoCodec, NULL)) < 0) {
         fprintf(stderr, "Failed to open codec for stream #%u\n", videoStreamIndex);
-        return -1;
+        return 0;
     }
 
     img_ctx = sws_getContext(videoCodecCtx->width,
@@ -129,7 +129,7 @@ int FFmpegVideo::open_input_file()
                 videoCodecCtx->width,videoCodecCtx->height,1);
     if(res<0){
         qDebug()<<"Fill arrays failed.";
-        return -1;
+        return 0;
     }
 
     openFlag=true;

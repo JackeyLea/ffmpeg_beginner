@@ -10,14 +10,10 @@ static enum AVPixelFormat hw_pix_fmt;
 static AVBufferRef* hw_device_ctx=NULL;
 
 FFmpegDecoder::FFmpegDecoder()
-{
-
-}
+{}
 
 FFmpegDecoder::~FFmpegDecoder()
-{
-
-}
+{}
 
 void FFmpegDecoder::setUrl(QString url)
 {

@@ -44,9 +44,9 @@ public:
     void free_variables();
 
     void setUrl(QString url);
-    int open_input_file();
+    bool open_input_file();
 
-    void initFilter();
+    bool initFilter();
 
     void setCL(int c,int l);
 

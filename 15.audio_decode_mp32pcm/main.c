@@ -30,11 +30,11 @@ int main()
 
         if(avformat_open_input(&fmtCtx,inFileName,NULL,NULL)<0){
             printf("Cannot open input file.\n");
-            return -1;
+            break;
         }
         if(avformat_find_stream_info(fmtCtx,NULL)<0){
             printf("Cannot find any stream in file.\n");
-            return -1;
+            break;
         }
 
         av_dump_format(fmtCtx,0,inFileName,0);
@@ -47,25 +47,25 @@ int main()
         }
         if(aStreamIndex==-1){
             printf("Cannot find audio stream.\n");
-            return -1;
+            break;
         }
 
         AVCodecParameters *aCodecPara = fmtCtx->streams[aStreamIndex]->codecpar;
         const AVCodec *codec = avcodec_find_decoder(aCodecPara->codec_id);
         if(!codec){
             printf("Cannot find any codec for audio.\n");
-            return -1;
+            break;
         }
         codecCtx = avcodec_alloc_context3(codec);
         if(avcodec_parameters_to_context(codecCtx,aCodecPara)<0){
             printf("Cannot alloc codec context.\n");
-            return -1;
+            break;
         }
         codecCtx->pkt_timebase = fmtCtx->streams[aStreamIndex]->time_base;
 
         if(avcodec_open2(codecCtx,codec,NULL)<0){
             printf("Cannot open audio codec.\n");
-            return -1;
+            break;
         }
 
         while(av_read_frame(fmtCtx,pkt)>=0){

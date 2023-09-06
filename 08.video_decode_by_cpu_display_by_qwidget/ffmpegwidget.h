@@ -38,7 +38,7 @@ public:
 
     void setUrl(QString url);
 
-    int open_input_file();
+    bool open_input_file();
 
 protected:
     void run();

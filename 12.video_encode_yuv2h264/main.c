@@ -185,6 +185,7 @@ int main()
                     if(ret<0){
                         printf("error is: %s.\n",av_err2str(ret));
                     }
+
                     av_packet_unref(pkt);//刷新缓存
                 }
             }

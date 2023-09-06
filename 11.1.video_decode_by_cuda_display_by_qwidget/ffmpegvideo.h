@@ -41,7 +41,7 @@ public:
 
     void ffmpeg_init_variables();
     void ffmpeg_free_variables();
-    int open_input_file();
+    bool open_input_file();
     static enum AVPixelFormat get_hw_format(AVCodecContext *ctx,
                                             const enum AVPixelFormat *pix_fmts);
     static int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type);

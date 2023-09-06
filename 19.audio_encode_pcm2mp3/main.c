@@ -56,19 +56,19 @@ int main()
 
         if(avformat_alloc_output_context2(&fmtCtx,NULL,NULL,outFileName)<0){
             printf("Cannot alloc output file context.\n");
-            return -1;
+            break;
         }
         const AVOutputFormat *outFmt = fmtCtx->oformat;
 
         if(avio_open(&fmtCtx->pb,outFileName,AVIO_FLAG_READ_WRITE)<0){
             printf("Cannot open output file.\n");
-            return -1;
+            break;
         }
 
         AVStream *outStream = avformat_new_stream(fmtCtx,NULL);
         if(!outStream){
             printf("Cannot create a new stream to output file.\n");
-            return -1;
+            break;
         }
 
         //设置参数
@@ -85,20 +85,20 @@ int main()
         codec = avcodec_find_encoder(outFmt->audio_codec);
         if(codec==NULL){
             printf("Cannot find audio encoder.\n");
-            return -1;
+            break;
         }
 
         codecCtx = avcodec_alloc_context3(codec);
         avcodec_parameters_to_context(codecCtx,codecPara);
         if(codecCtx==NULL){
             printf("Cannot alloc codec ctx from para.\n");
-            return -1;
+            break;
         }
 
         //打开编码器
         if(avcodec_open2(codecCtx,codec,NULL)<0){
             printf("Cannot open encoder.\n");
-            return -1;
+            break;
         }
 
         av_dump_format(fmtCtx,0,outFileName,1);
@@ -135,7 +135,7 @@ int main()
         FILE *inFile = fopen(inFileName,"rb");
         if(!inFile){
             printf("Cannot open input file.\n");
-            return -1;
+            break;
         }
 
         for(int i=0;;i++){
