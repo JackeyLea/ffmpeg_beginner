@@ -1,6 +1,7 @@
 # ffmpeg_beginner
 
-<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg4/5/6入门系列教程</a>代码
+<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg4入门系列教程</a>代码
+FFmpeg5/6对应代码见其他分支
 
 ## 编译说明
 
