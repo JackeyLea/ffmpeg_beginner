@@ -26,7 +26,7 @@ extern "C"{
 
 int main()
 {
-    QString _url="/home/jackey/Music/test.mp3";
+    QString _url="C:\\Users\\hyper\\Music\\Sample.mp3";
 
     QAudioOutput *audioOutput;
     QIODevice *streamOut;

@@ -9,8 +9,8 @@ import VideoItem 1.0
 
 Window {
     objectName: "mainWindow"
-    width: 640
-    height: 480
+    width: 1280
+    height: 720
     visible: true
     title: qsTr("Mpplayer")
 
@@ -40,7 +40,7 @@ Window {
             y: 363
             width: 507
             height: 40
-            text: qsTr("/home/jackey/Videos/Sample.flv")
+            text: qsTr("C:\\Users\\hyper\\Videos\\Sample.wmv")
         }
 
         Button {

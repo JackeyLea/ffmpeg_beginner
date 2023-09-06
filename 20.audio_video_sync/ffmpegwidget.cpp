@@ -2,10 +2,6 @@
 
 FFmpegAudio::FFmpegAudio()
 {
-    fmtCtx = avformat_alloc_context();
-    pkt = av_packet_alloc();
-    audioFrame = av_frame_alloc();
-
     QAudioFormat audioFmt;
     audioFmt.setSampleRate(44100);
     audioFmt.setChannelCount(2);
@@ -22,6 +18,12 @@ FFmpegAudio::FFmpegAudio()
     audioOutput->setVolume(100);
 
     streamOut = audioOutput->start();
+
+    fmtCtx = avformat_alloc_context();
+    audioCodecCtx = NULL;
+    pkt = av_packet_alloc();
+    audioFrame = av_frame_alloc();
+    swr_ctx = swr_alloc();
 }
 
 FFmpegAudio::~FFmpegAudio()
@@ -43,17 +45,19 @@ void FFmpegAudio::setUrl(QString url)
 
 int FFmpegAudio::open_input_file()
 {
-    if(_url.isEmpty()) return -1;
+    if(_url.isEmpty()) return 0;
 
     if(avformat_open_input(&fmtCtx,_url.toLocal8Bit().data(),NULL,NULL)<0){
         printf("Cannot open input file.\n");
-        return -1;
+        return 0;
     }
 
     if(avformat_find_stream_info(fmtCtx,NULL)<0){
         printf("Cannot find any stream in file.\n");
-        return -1;
+        return 0;
     }
+
+    av_dump_format(fmtCtx,0,_url.toLocal8Bit().data(),0);
 
     int streamCnt=fmtCtx->nb_streams;
     for(int i=0;i<streamCnt;i++){
@@ -65,7 +69,7 @@ int FFmpegAudio::open_input_file()
 
     if(audioStreamIndex==-1){
         printf("Cannot find any stream in file.\n");
-        return -1;
+        return 0;
     }
 
     ///////////////////////////音频部分开始//////////////////////////////////
@@ -73,28 +77,29 @@ int FFmpegAudio::open_input_file()
 
     if(!(audioCodec = avcodec_find_decoder(audioCodecPara->codec_id))){
         printf("Cannot find valid audio decode codec.\n");
-        return -1;
+        return 0;
     }
 
     if(!(audioCodecCtx = avcodec_alloc_context3(audioCodec))){
         printf("Cannot find valid audio decode codec context.\n");
-        return -1;
+        return 0;
     }
 
     if(avcodec_parameters_to_context(audioCodecCtx,audioCodecPara)<0){
         printf("Cannot initialize audio parameters.\n");
-        return -1;
+        return 0;
     }
 
     audioCodecCtx->pkt_timebase = fmtCtx->streams[audioStreamIndex]->time_base;
 
     if(avcodec_open2(audioCodecCtx,audioCodec,NULL)<0){
         printf("Cannot open audio codec.\n");
-        return -1;
+        return 0;
     }
 
     //设置转码参数
     uint64_t out_channel_layout = audioCodecCtx->channel_layout;
+    enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
     out_sample_rate = audioCodecCtx->sample_rate;
     out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
     //printf("out rate : %d , out_channel is: %d\n",out_sample_rate,out_channels);
@@ -109,7 +114,10 @@ int FFmpegAudio::open_input_file()
                                  audioCodecCtx->sample_fmt,
                                  audioCodecCtx->sample_rate,
                                  0,NULL);
-    swr_init(swr_ctx);
+    if(swr_init(swr_ctx)!=0){
+        printf("Cannot init swr\n");
+        return 0;
+    }
     ///////////////////////////音频部分结束//////////////////////////////////
 
     return true;
@@ -118,21 +126,18 @@ int FFmpegAudio::open_input_file()
 void FFmpegAudio::run()
 {
     if(!open_input_file()){
-        qDebug()<<"Please open file first.";
+        qDebug()<<"Please open audio file first.";
         return;
     }
 
-    qDebug()<<"Open file "<<_url<<"done.";
+    qDebug()<<"Open audio file "<<_url<<"done.";
 
     double sleep_time=0;
 
     while(av_read_frame(fmtCtx,pkt)>=0){
-        qDebug()<<"read audio frame";
         if(pkt->stream_index==audioStreamIndex){
-            qDebug()<<"audio";
             if(avcodec_send_packet(audioCodecCtx,pkt)>=0){
                 while(avcodec_receive_frame(audioCodecCtx,audioFrame)>=0){
-                    qDebug()<<"receive";
                     if(av_sample_fmt_is_planar(audioCodecCtx->sample_fmt)){
                         int len = swr_convert(swr_ctx,
                                               &audio_out_buffer,
@@ -165,11 +170,12 @@ void FFmpegAudio::run()
         }
     }
 
-    qDebug()<<"All video play done";
+    qDebug()<<"All audio play done";
 }
 
 FFmpegVideo::FFmpegVideo()
 {
+    img_ctx = sws_alloc_context();
     fmtCtx = avformat_alloc_context();
     pkt = av_packet_alloc();
     yuvFrame = av_frame_alloc();
@@ -266,11 +272,11 @@ int FFmpegVideo::open_input_file()
 void FFmpegVideo::run()
 {
     if(!open_input_file()){
-        qDebug()<<"Please open file first.";
+        qDebug()<<"Please open video file first.";
         return;
     }
 
-    qDebug()<<"Open file "<<_url<<"done.";
+    qDebug()<<"Open video file "<<_url<<"done.";
 
     while(av_read_frame(fmtCtx,pkt)>=0){
         if(pkt->stream_index == videoStreamIndex){

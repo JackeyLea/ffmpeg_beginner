@@ -6,8 +6,8 @@ import VideoItem 1.0
 
 Window {
     visible: true
-    width: 640
-    height: 480
+    width: 1280
+    height: 720
     title: qsTr("Hello World")
 
     VideoItem{
@@ -22,7 +22,7 @@ Window {
         text: qsTr("Play")
 
         onClicked: {
-            videoitem.setUrl("/home/jackey/Videos/Sample.flv")
+            videoitem.setUrl("C:\\Users\\hyper\\Videos\\Sample.wmv")
             videoitem.start()
         }
     }

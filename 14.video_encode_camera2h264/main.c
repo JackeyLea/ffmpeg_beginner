@@ -75,11 +75,19 @@ int main()
     do{
         /////////////解码器部分//////////////////////
         //打开摄像头
+#ifdef _WIN32
+        AVInputFormat *inFmt = av_find_input_format("dshow");
+        if(avformat_open_input(&inFmtCtx,"video=Logi C270 HD WebCam",inFmt,NULL)<0){
+            printf("Cannot open camera.\n");
+            return -1;
+        }
+#elif __linux__
         AVInputFormat *inFmt = av_find_input_format("v4l2");
         if(avformat_open_input(&inFmtCtx,"/dev/video0",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
             return -1;
         }
+#endif
 
         if(avformat_find_stream_info(inFmtCtx,NULL)<0){
             printf("Cannot find any stream in file.\n");
@@ -144,7 +152,7 @@ int main()
         //////////////解码器部分结束/////////////////////
 
         //////////////编码器部分开始/////////////////////
-        const char* outFile = "result.h264";
+        const char* outFile = "camera.h264";
 
         if(avformat_alloc_output_context2(&outFmtCtx,NULL,NULL,outFile)<0){
             printf("Cannot alloc output file context.\n");
@@ -164,15 +172,15 @@ int main()
             printf("create new video stream fialed.\n");
             return -1;
         }
-        outVStream->time_base.den=30;
+        outVStream->time_base.den=60;
         outVStream->time_base.num=1;
 
         //编码参数相关
         AVCodecParameters *outCodecPara = outFmtCtx->streams[outVStream->index]->codecpar;
         outCodecPara->codec_type=AVMEDIA_TYPE_VIDEO;
         outCodecPara->codec_id = outFmt->video_codec;
-        outCodecPara->width = 480;
-        outCodecPara->height = 360;
+        outCodecPara->width = 1920;
+        outCodecPara->height = 1080;
         outCodecPara->bit_rate = 110000;
 
         //查找编码器
@@ -195,7 +203,7 @@ int main()
         outCodecCtx->width = inCodecCtx->width;
         outCodecCtx->height = inCodecCtx->height;
         outCodecCtx->time_base.num=1;
-        outCodecCtx->time_base.den=30;
+        outCodecCtx->time_base.den=60;
         outCodecCtx->bit_rate=110000;
         outCodecCtx->gop_size=10;
 
@@ -244,7 +252,7 @@ int main()
                         //encode
                         if(avcodec_send_frame(outCodecCtx,yuvFrame)>=0){
                             if(avcodec_receive_packet(outCodecCtx,outPkt)>=0){
-                                printf("encode one frame.\n");
+                                printf("encode %d frame.\n",count);
                                 ++count;
                                 outPkt->stream_index = outVStream->index;
                                 av_packet_rescale_ts(outPkt,outCodecCtx->time_base,
@@ -255,13 +263,14 @@ int main()
                             }
                         }
 #ifdef _WIN32
-Sleep(1000*24);
+Sleep(24);//延时24毫秒
 #elif __linux__
 usleep(1000*24);
 #endif
                     }
                 }
                 av_packet_unref(inPkt);
+                fflush(stdout);
             }
         }
 

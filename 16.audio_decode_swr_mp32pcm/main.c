@@ -13,7 +13,7 @@
 
 int main()
 {
-    const char inFileName[] = "/home/jackey/Music/test.mp3";
+    const char inFileName[] = "C:\\Users\\hyper\\Music\\Sample.mp3";
     const char outFileName[] = "test.pcm";
     FILE *file=fopen(outFileName,"w+b");
     if(!file){

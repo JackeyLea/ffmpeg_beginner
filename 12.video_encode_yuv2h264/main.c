@@ -59,7 +59,8 @@ int main()
 
     do{
         //[2]!打开输出文件，并填充fmtCtx数据
-        int in_w = 1280,in_h=720,frameCnt=4970;
+        // TODO 根据需要修改参数
+        int in_w = 1280,in_h=720,frameCnt=23005;
         const char *outFile = "result.h264";
         if(avformat_alloc_output_context2(&fmtCtx,NULL,NULL,outFile)<0){
             printf("Cannot alloc output file context.\n");
@@ -174,7 +175,7 @@ int main()
             //编码
             if(avcodec_send_frame(codecCtx,picFrame)>=0){
                 while(avcodec_receive_packet(codecCtx,pkt)>=0){
-                    printf("encoder success!\n");
+                    printf("encoder %d success!\n",i);
 
                     // parpare packet for muxing
                     pkt->stream_index = vStream->index;

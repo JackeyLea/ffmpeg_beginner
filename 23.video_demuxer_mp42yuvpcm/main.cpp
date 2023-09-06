@@ -244,7 +244,7 @@ int main()
     int videoStreamIndex = -1;
     unsigned int i = 0;
 
-    char inputFile[128] = "/home/jackey/Videos/Sample.flv";
+    char inputFile[128] = "C:\\Users\\hyper\\Videos\\Sample.mkv";
     char outAudioFile[128] = "out.pcm";
     char outVideoFile[128] = "out.yuv";
 

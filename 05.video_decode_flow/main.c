@@ -10,7 +10,7 @@
 #include "libpostproc/postprocess.h"
 
 int main() {
-    char filePath[]       = "/home/jackey/Videos/Sample.flv";//文件地址
+    char filePath[]       = "C:\\Users\\hyper\\Videos\\Sample.wmv";//文件地址
     int  videoStreamIndex = -1;//视频流所在流序列中的索引
     int ret=0;//默认返回值
 

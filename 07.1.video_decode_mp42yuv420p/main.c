@@ -16,7 +16,7 @@ int main() {
         return -1;
     }
 
-    char filePath[]       = "/home/jackey/Videos/Sample.flv";//文件地址
+    char filePath[]       = "C:\\Users\\hyper\\Videos\\Sample.wmv";//文件地址
     int  videoStreamIndex = -1;//视频流所在流序列中的索引
     int ret=0;//默认返回值
 
@@ -91,6 +91,7 @@ int main() {
         av_new_packet(pkt, codecCtx->width * codecCtx->height); //调整packet的数据
 
         //===========================  读取视频信息 ===============================//
+        int frameCnt = 0;//帧数
         while (av_read_frame(fmtCtx, pkt) >= 0) { //读取的是一帧视频  数据存入一个AVPacket的结构中
             if (pkt->stream_index == videoStreamIndex){
                 if (avcodec_send_packet(codecCtx, pkt) == 0){
@@ -98,6 +99,9 @@ int main() {
                         fwrite(yuvFrame->data[0],1,w*h,fp);//y
                         fwrite(yuvFrame->data[1],1,w*h/4,fp);//u
                         fwrite(yuvFrame->data[2],1,w*h/4,fp);//v
+
+                        printf("save frame %d to file.\n",frameCnt++);
+                        fflush(fp);
                     }
                 }
             }

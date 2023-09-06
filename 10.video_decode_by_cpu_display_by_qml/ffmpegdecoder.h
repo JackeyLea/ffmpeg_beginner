@@ -25,7 +25,7 @@ extern "C"{
 #include <libavformat/avformat.h>
 }
 
-const static int bufferSize = 1024*768;
+const static int bufferSize = 1280*720;
 
 struct YUVData{
     YUVData(){
@@ -81,12 +81,7 @@ private:
     AVFrame         *yuvFrame     = NULL;
     AVFrame         *rgbFrame     = NULL;
 
-    struct SwsContext *img_ctx=NULL;
-
-    uchar *out_buffer= nullptr;
-
     int videoStreamIndex =-1;
-    int numBytes = -1;
 
     QString _url;
 

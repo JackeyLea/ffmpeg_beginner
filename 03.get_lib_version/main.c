@@ -16,7 +16,9 @@ int main()
     ver_major = (codecVer>>16)&0xff;
     ver_minor = (codecVer>>8)&0xff;
     ver_micro = (codecVer)&0xff;
-    printf("FFmpeg version is: %s .\navcodec version is: %d=%d.%d.%d.\n",FFMPEG_VERSION,codecVer,ver_major,ver_minor,ver_micro);
+    printf("FFmpeg version is: %s .\navcodec version is: %d=%d.%d.%d.\n",
+           FFMPEG_VERSION,
+           codecVer,ver_major,ver_minor,ver_micro);
 
     return 0;
 }

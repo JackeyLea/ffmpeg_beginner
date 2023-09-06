@@ -102,9 +102,9 @@ void FFmpegDecoder::run()
                     m_yuvData.Y.resize(yuvFrame->linesize[0]*yuvFrame->height);
                     m_yuvData.Y =QByteArray((char*)yuvFrame->data[0],m_yuvData.Y.size());
                     m_yuvData.U.resize(yuvFrame->linesize[1]*yuvFrame->height/2);
-                    m_yuvData.U =QByteArray((char*)yuvFrame->data[1],m_yuvData.Y.size());
+                    m_yuvData.U =QByteArray((char*)yuvFrame->data[1],m_yuvData.Y.size()/4);
                     m_yuvData.V.resize(yuvFrame->linesize[2]*yuvFrame->height/2);
-                    m_yuvData.V =QByteArray((char*)yuvFrame->data[2],m_yuvData.Y.size());
+                    m_yuvData.V =QByteArray((char*)yuvFrame->data[2],m_yuvData.Y.size()/4);
                     m_yuvData.yLineSize = yuvFrame->linesize[0];
                     m_yuvData.uLineSize = yuvFrame->linesize[1];
                     m_yuvData.vLineSize = yuvFrame->linesize[2];
@@ -112,7 +112,7 @@ void FFmpegDecoder::run()
 
                     frameBuffer.append(m_yuvData);
 
-                    QThread::msleep(24);
+                    QThread::msleep(33);
                 }
             }
             av_packet_unref(pkt);
