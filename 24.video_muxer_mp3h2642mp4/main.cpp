@@ -214,11 +214,11 @@ int main()
                             //write PTS
                             AVRational timeBase1 = inStream->time_base;
                             //Duration between 2 frames
-                            int64_t calcDuration = (double)AV_TIME_BASE/av_q2d(inStream->r_frame_rate);
+                            int64_t calcDuration = (int)(AV_TIME_BASE/av_q2d(inStream->r_frame_rate));
                             //Parameters
-                            packet.pts = (double)(frameIndex*calcDuration)/(double)(av_q2d(timeBase1)*AV_TIME_BASE);
+                            packet.pts = (int)((frameIndex*calcDuration)/(av_q2d(timeBase1)*AV_TIME_BASE));
                             packet.dts = packet.pts;
-                            packet.duration = (double)calcDuration/(double)(av_q2d(timeBase1)*AV_TIME_BASE);
+                            packet.duration = (int)(calcDuration/(av_q2d(timeBase1)*AV_TIME_BASE));
                             frameIndex++;
                         }
 
@@ -253,11 +253,11 @@ int main()
                             //write PTS
                             AVRational timeBase1 = inStream->time_base;
                             //Duration between 2 frames
-                            int64_t calcDuration = (double)AV_TIME_BASE/av_q2d(inStream->r_frame_rate);
+                            int64_t calcDuration = (int)(AV_TIME_BASE/av_q2d(inStream->r_frame_rate));
                             //Parameters
-                            packet.pts = (double)(frameIndex*calcDuration)/(double)(av_q2d(timeBase1)*AV_TIME_BASE);
+                            packet.pts = (int)((frameIndex*calcDuration)/(av_q2d(timeBase1)*AV_TIME_BASE));
                             packet.dts = packet.pts;
-                            packet.duration = (double)calcDuration/(double)(av_q2d(timeBase1)*AV_TIME_BASE);
+                            packet.duration = (int)(calcDuration/(av_q2d(timeBase1)*AV_TIME_BASE));
                             frameIndex++;
                         }
 

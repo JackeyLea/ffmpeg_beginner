@@ -125,11 +125,11 @@ int main(){
                     //Write PTS
                     AVRational time_base1 = inVStream->time_base;
                     //Duration between 2 frames (us)
-                    int64_t calc_duration = (double)AV_TIME_BASE / av_q2d(inVStream->r_frame_rate);
+                    int64_t calc_duration = (int)(AV_TIME_BASE / av_q2d(inVStream->r_frame_rate));
                     //Parameters
-                    pkt->pts = (double)(frame_index*calc_duration) / (double)(av_q2d(time_base1)*AV_TIME_BASE);
+                    pkt->pts = (int)((frame_index*calc_duration) / (av_q2d(time_base1)*AV_TIME_BASE));
                     pkt->dts = pkt->pts;
-                    pkt->duration = (double)calc_duration / (double)(av_q2d(time_base1)*AV_TIME_BASE);
+                    pkt->duration = (int)(calc_duration / (av_q2d(time_base1)*AV_TIME_BASE));
                     frame_index++;
                 }
                 //Convert PTS/DTS
@@ -138,7 +138,7 @@ int main(){
                 pkt->duration = av_rescale_q(pkt->duration, inVStream->time_base, outVStream->time_base);
                 pkt->pos = -1;
                 pkt->stream_index = outVStreamIndex;
-                printf("Write 1 Packet. size:%5d\tpts:%ld\n", pkt->size, pkt->pts);
+                printf("Write 1 Packet. size:%5d\tpts:%lld\n", pkt->size, pkt->pts);
                 //Write
                 if (av_interleaved_write_frame(outFmtCtx, pkt) < 0) {
                     printf("Error muxing packet\n");
