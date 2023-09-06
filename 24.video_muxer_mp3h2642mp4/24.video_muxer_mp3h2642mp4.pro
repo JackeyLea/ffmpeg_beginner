@@ -13,4 +13,4 @@ RCC_DIR     = rcc
 UI_DIR      = ui
 
 SOURCES += \
-        main.cpp
+        main.c
