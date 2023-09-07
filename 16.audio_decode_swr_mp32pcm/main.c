@@ -70,21 +70,21 @@ int main()
         }
 
         //设置转码参数
-        uint64_t out_channel_layout = codecCtx->channel_layout;
+        AVChannelLayout out_channel = codecCtx->ch_layout;
         enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
         int out_sample_rate = codecCtx->sample_rate;
-        int out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
 
         uint8_t *audio_out_buffer = (uint8_t*)av_malloc(MAX_AUDIO_FRAME_SIZE*2);
 
-        SwrContext *swr_ctx = swr_alloc_set_opts(NULL,
-                                                 out_channel_layout,
-                                                 out_sample_fmt,
-                                                 out_sample_rate,
-                                                 codecCtx->channel_layout,
-                                                 codecCtx->sample_fmt,
-                                                 codecCtx->sample_rate,
-                                                 0,NULL);
+        SwrContext *swr_ctx = swr_alloc();
+        swr_alloc_set_opts2(&swr_ctx,
+                            &out_channel,
+                            out_sample_fmt,
+                            out_sample_rate,
+                            &codecCtx->ch_layout,
+                            codecCtx->sample_fmt,
+                            codecCtx->sample_rate,
+                            0,NULL);
         swr_init(swr_ctx);
 
         while(av_read_frame(fmtCtx,pkt)>=0){
@@ -108,7 +108,7 @@ int main()
                             }
 
                             int dst_bufsize = av_samples_get_buffer_size(0,
-                                                                         out_channels,
+                                                                         codec->ch_layouts->nb_channels,
                                                                          len,
                                                                          out_sample_fmt,
                                                                          1);

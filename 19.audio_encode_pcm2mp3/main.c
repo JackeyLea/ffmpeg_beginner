@@ -79,7 +79,6 @@ int main()
         codecPara->channel_layout = AV_CH_LAYOUT_STEREO;
         codecPara->bit_rate = 128000;
         codecPara->format = AV_SAMPLE_FMT_FLTP;
-        codecPara->channels = av_get_channel_layout_nb_channels(codecPara->channel_layout);
 
         //查找编码器
         codec = avcodec_find_encoder(outFmt->audio_codec);
@@ -109,11 +108,12 @@ int main()
         frame->channels = 2;
 
         // PCM重采样
-        struct SwrContext *swrCtx = swr_alloc_set_opts(NULL,
-                           av_get_default_channel_layout(codecCtx->channels),
+        struct SwrContext *swrCtx;
+        swr_alloc_set_opts2(&swrCtx,
+                           &codecCtx->ch_layout,
                            codecCtx->sample_fmt,
                            codecCtx->sample_rate,
-                           av_get_default_channel_layout(frame->channels),
+                           &frame->ch_layout,
                            AV_SAMPLE_FMT_S16,// PCM源文件的采样格式
                            44100,0,NULL);
         swr_init(swrCtx);

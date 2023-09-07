@@ -76,7 +76,7 @@ int main()
         /////////////解码器部分//////////////////////
         //打开摄像头
 #ifdef _WIN32
-        AVInputFormat *inFmt = av_find_input_format("dshow");
+        const AVInputFormat *inFmt = av_find_input_format("dshow");
         if(avformat_open_input(&inFmtCtx,"video=Logi C270 HD WebCam",inFmt,NULL)<0){
             printf("Cannot open camera.\n");
             break;
