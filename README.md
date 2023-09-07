@@ -1,14 +1,15 @@
 # ffmpeg_beginner
 
-<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg4入门系列教程</a>代码
+<a href="https://feater.top/ffmpeg/ffmpeg-learning-indexes" target="_blank">FFmpeg5入门系列教程</a>代码
 
-FFmpeg5/6对应代码见其他分支
+FFmpeg4/6对应代码见其他分支
 
 ## 编译说明
 
 - 使用<a href="https://github.com/BtbN/FFmpeg-Builds/releases" target="_blank">FFmpeg-Builds</a>Latest Auto-Build (2023-09-04 12:49) 15d0b26 测试
 - 尽量保证编译结果没有错误、没有警告、没有deprecated方法调用
 - 如果提示系统没有mfx头文件，可以从<a href="https://github.com/Intel-Media-SDK/MediaSDK/releases/tag/intel-mediasdk-22.5.4" target="_blank">Intel Media SDK</a>下载，下载后把api/include目录重命名为mfx，然后复制到include目录中
+- 与4.x分支相比，修改了11.1/11.2/11.3/14/16/19
 
 ## 源码说明
 
