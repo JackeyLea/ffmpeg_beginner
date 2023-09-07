@@ -1,7 +1,7 @@
 
 # 包含FFmpeg库文件位置
 
-DEFINES += FFMPEG4
+DEFINES += FFMPEG5
 
 # windows平台 VS2019
 win32{
